@@ -1,0 +1,17 @@
+{
+  "name": "L1",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "lodash": "^4.17.4",
+    "mathjs": "^3.16.3",
+    "printf": "^0.2.5"
+  }
+}
