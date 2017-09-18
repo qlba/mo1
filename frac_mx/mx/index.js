@@ -44,6 +44,7 @@ class Mx
 		return this;
 	}
 
+
 	fill(callback)
 	{
 		var {m, n} = this;
@@ -162,7 +163,30 @@ class Mx
 	}
 
 
-	toString(elementFormat, typesetRatio)
+	simplex()
+	{
+
+	}
+
+	hasValidBasicView()
+	{
+		var {m} = this;
+
+		for(var i = 0; i < m - 1; i++)
+			if(this.getElement(i, 0).less(this.getElement(i, 0).neg()))
+				return false;
+
+		return true;
+	}
+
+
+	validElement(i, j)
+	{
+		return N(i + 1) && N(j + 1) && i < this.m && j < this.n;
+	}
+
+
+	toString(elementFormat, typesetRatio = 2)
 	{
 		var {m, n} = this;
 
@@ -192,11 +216,6 @@ class Mx
 		{
 			return row.join('') + '\n'.repeat((maxLen + 1) / typesetRatio);
 		}).join('');
-	}
-
-	validElement(i, j)
-	{
-		return N(i + 1) && N(j + 1) && i < this.m && j < this.n;
 	}
 }
 
