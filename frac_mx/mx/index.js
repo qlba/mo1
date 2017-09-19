@@ -133,7 +133,7 @@ class Mx
 			var i;
 
 			for(i = 0; i < m; i++)
-				if(basics[i] === undefined && !self.getElement(i, j).equal(0))
+				if(basics[i] === undefined && !self.getElement(i, j).isZero())
 				{
 					basics[i] = j;
 
@@ -165,7 +165,83 @@ class Mx
 
 	simplex()
 	{
+		var basic = this.detectBasicView(),
+			{m, n} = this;
 
+		if(!basic)
+			throw new Error('Matrix does not have basic view');
+
+		if(!this.hasValidBasicView())
+			throw new Error('Basic view is not valid');
+
+		var next;
+
+		console.log(this.toString());
+
+		while((next = this.nextSimplex()))
+		{
+			console.log(`Basic ${next.j} instead of ${basic[next.i]} ` +
+				`in row ${next.i}, old value ${this.getElement(m - 1, 0)}`);
+
+			this.makeBasic(next.i, basic[next.i] = next.j);
+
+			console.log(this.toString());
+		}
+
+		var point = new Array(n - 1).fill(0);
+
+		for(var i = 0; i < m - 1; i++)
+			point[basic[i] - 1] = this.getElement(i, 0);
+		
+		return {
+			point,
+			value: this.getElement(m - 1, 0),
+		};
+	}
+
+	detectBasicView()
+	{
+		var {m, n} = this,
+			basic = new Array(m - 1).fill(false);
+
+		for(var j = 1; j < n; j++)
+		{
+			var one = this.isBasicColumn(j);
+
+			if(one !== false)
+				basic[one] = j;
+		}
+
+		return basic.includes(false) ? false : basic;
+	}
+
+	isBasicColumn(j)
+	{
+		var {m, n} = this;
+
+		if(j === 0)
+			throw new RangeError('Not a variable column');
+
+		if(!this.validElement(0, j))
+			throw new RangeError(`No such row [${j}] in Mx[${m}x${n}]`);
+
+		var one = false;
+		
+		if(!this.getElement(m - 1, j).isZero())
+			return false;
+
+		for(var i = 0; i < m - 1; i++)
+			if(one === false)
+			{
+				if(this.getElement(i, j).isOne())
+					one = i;
+				else if(!this.getElement(i, j).isZero())
+					return false;
+			}
+			else if(!this.getElement(i, j).isZero())
+				return false;
+
+		return one;
 	}
 
 	hasValidBasicView()
@@ -173,11 +249,47 @@ class Mx
 		var {m} = this;
 
 		for(var i = 0; i < m - 1; i++)
-			if(this.getElement(i, 0).less(this.getElement(i, 0).neg()))
+			if(this.getElement(i, 0).isNegative())
 				return false;
 
 		return true;
 	}
+
+	nextSimplex()
+	{
+		var {m, n} = this;
+
+		for(var j = 1; j < n; j++)
+			if(this.getElement(m - 1, j).isNegative())
+			{
+				var U = null;
+
+				for(var i = 0; i < m - 1; i++)
+					if(
+						this.getElement(i, j).isPositive()
+						&&
+						(
+							U === null
+							||
+							(
+								this.getElement(i, 0).div(this.getElement(i, j))
+							).less(
+								this.getElement(U, 0).div(this.getElement(U, j))
+							)
+						)
+					)
+						U = i;
+
+				if(U === null)
+					throw new Error('Value is not limited by the system');
+
+				return {i: U, j};
+			}
+
+		return false;
+	}
+
+
 
 
 	validElement(i, j)

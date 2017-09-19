@@ -40,6 +40,26 @@ class IAryth
 		return this.constructor.less(this, rhs);
 	}
 
+	isOne()
+	{
+		return this.constructor.isOne(this);
+	}
+
+	isZero()
+	{
+		return this.constructor.isZero(this);
+	}
+
+	isNegative()
+	{
+		return this.constructor.isNegative(this);
+	}
+
+	isPositive()
+	{
+		return this.constructor.isPositive(this);
+	}
+
 	clone()
 	{
 		return this.constructor.clone(this);
@@ -93,6 +113,26 @@ class IAryth
 	static clone()
 	{
 		throw new Error('Not implemented');
+	}
+
+	static isOne(lhs)
+	{
+		return !lhs.isZero() && lhs.inv().equal(lhs);
+	}
+
+	static isZero(lhs)
+	{
+		return lhs.neg().equal(lhs);
+	}
+
+	static isNegative(lhs)
+	{
+		return lhs.less(lhs.neg());
+	}
+
+	static isPositive(lhs)
+	{
+		return lhs.neg().less(lhs);
 	}
 	
 	static toString()
