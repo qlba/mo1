@@ -1,7 +1,6 @@
 var {N} = require('../utils/number_types'),
 	{IAryth} = require('../utils/iaryth'),
-	{is} = require('../utils/is'),
-	{sprintf} = require('../utils/printf');
+	{is} = require('../utils/is');
 
 class Mx
 {
@@ -188,16 +187,17 @@ class Mx
 
 	toString(elementFormat, typesetRatio = 2)
 	{
-		var {m, n} = this;
+		var {m, n} = this,
+			i, j;
 
 		var elements = new Array(m),
 			maxLen = 0;
 
-		for(var i = 0; i < m; i++)
+		for(i = 0; i < m; i++)
 		{
 			elements[i] = new Array(n);
 
-			for(var j = 0; j < n; j++)
+			for(j = 0; j < n; j++)
 			{
 				elements[i][j] = this.getElement(i, j).toString(elementFormat);
 
@@ -208,8 +208,8 @@ class Mx
 
 		maxLen++;
 
-		for(var i = 0; i < m; i++)
-			for(var j = 0; j < n; j++)
+		for(i = 0; i < m; i++)
+			for(j = 0; j < n; j++)
 				elements[i][j] = ' '.repeat(maxLen - elements[i][j].length) + elements[i][j];
 		
 		return elements.map(function(row)

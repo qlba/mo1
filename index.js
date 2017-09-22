@@ -2,19 +2,19 @@ var {Mx} = require('./frac_mx/mx'),
 	{Frac} = require('./frac_mx/frac'),
 	{combinations} = require('./utils/combinatorics');
 
-// var mat = [
-// 	[5,  5, -3,  1, -1,  4],
-// 	[2,  1, -2,  3,  4, -1],
-// 	[1,  5, -6,  3,  2,  4],
-// 	// [4,  2, -4,  6,  8, -2],
-// 	[0, -1, -1, -1, -1, -1]
-// ];
-
 var mat = [
-	[5, -3,  1, -1,  4, 5],
-	[1, -2,  3,  4, -1, 2],
-	[5, -6,  3,  2,  4, 1]
+	[5,  5, -3,  1, -1,  4],
+	[2,  1, -2,  3,  4, -1],
+	[1,  5, -6,  3,  2,  4],
+	// [4,  2, -4,  6,  8, -2],
+	[0, -1, -1, -1, -1, -1]
 ];
+
+// var mat = [
+// 	[5, -3,  1, -1,  4, 5],
+// 	[1, -2,  3,  4, -1, 2],
+// 	[5, -6,  3,  2,  4, 1]
+// ];
 
 var mx = new Mx(mat.length, mat[0].length);
 
@@ -23,11 +23,14 @@ mx.fill(function(_, i, j)
 	return new Frac(mat[i][j], 1);
 });
 
-// mx.makeBasic(1, 1);
-// mx.makeBasic(0, 2);
-// mx.makeBasic(2, 3);
+// console.log(mx.toString());
+// mx.makeBasic(0, 3-1);
+// console.log(mx.toString());
+// mx.makeBasic(1, 4-1);
+// console.log(mx.toString());
+// mx.makeBasic(2, 5-1);
+// console.log(mx.toString());
 
-console.log(mx.toString());
 
 combinations(3, 1, 5).forEach(function(combination)
 {
@@ -50,7 +53,7 @@ combinations(3, 1, 5).forEach(function(combination)
 				point.push(new Frac(0, 1));
 
 		console.log('[' + point.join(', ') + ']: Z = ' +
-			mx.getElement(3, 0).toString('%.0f')
+			mx.getElement(3, 0).toString('%.2f')
 		);
 		
 		for(var i = 0; i < 3; i++)
