@@ -1,5 +1,5 @@
 var {N} = require('../utils/number_types'),
-	{IAryth} = require('../utils/iaryth'),
+	{IAryth} = require('./iaryth'),
 	{is} = require('../utils/is');
 
 class Mx
@@ -36,7 +36,7 @@ class Mx
 			throw new RangeError(`No such element: [${i}x${j}] in Mx[${m}x${n}]`);
 
 		if(!is(IAryth)(value))
-			throw new TypeError('value is not IAryth');
+			throw new TypeError('Value is not IAryth');
 
 		this.data[i][j] = value;
 
@@ -142,7 +142,9 @@ class Mx
 				}
 			
 			if(i === m)
-				throw new Error('Basic variable count exceeds matrix rank');
+				throw new Error('Impossible to make specified columns basic ' +
+					'simulatenously. These columns are linealy dependendent.'
+				);
 		});
 
 		return basics;

@@ -1,6 +1,6 @@
-var {Mx} = require('./frac_mx/mx'),
-	{Frac} = require('./frac_mx/frac'),
-	{combinations} = require('./utils/combinatorics');
+var {Mx} = require('./mx'),
+	{Frac} = require('./frac'),
+	{combinations} = require('./mx/utils/combinatorics');
 
 var mat = [
 	[5,  5, -3,  1, -1,  4],
@@ -59,42 +59,42 @@ mx.fill(function(_, i, j)
 // console.log(mx.toString());
 
 
-combinations(3, 1, 5).forEach(function(combination)
-{
-	try
-	{
-		console.log(combination);
+// combinations(3, 1, 5).forEach(function(combination)
+// {
+// 	try
+// 	{
+// 		console.log(combination);
 
-		mx.toBasicView(combination);
+// 		mx.toBasicView(combination);
 
-		var point = [];
+// 		var point = [];
 
-		for(var j = 1; j <= 6; j++)
-			if(combination.includes(j))
-			{
-				for(var i = 0; i < 3; i++)
-					if(!mx.getElement(i, j).equal(mx.getElement(i, j).neg()))
-						point.push(mx.getElement(i, 0));
-			}
-			else
-				point.push(new Frac(0, 1));
+// 		for(var j = 1; j <= 6; j++)
+// 			if(combination.includes(j))
+// 			{
+// 				for(var i = 0; i < 3; i++)
+// 					if(!mx.getElement(i, j).equal(mx.getElement(i, j).neg()))
+// 						point.push(mx.getElement(i, 0));
+// 			}
+// 			else
+// 				point.push(new Frac(0, 1));
 
-		console.log('[' + point.join(', ') + ']: Z = ' +
-			mx.getElement(3, 0).toString('%.2f')
-		);
+// 		console.log('[' + point.join(', ') + ']: Z = ' +
+// 			mx.getElement(3, 0).toString('%.2f')
+// 		);
 		
-		for(var i = 0; i < 3; i++)
-			if(mx.getElement(i, 0).less(mx.getElement(i, 0).neg()))
-				console.log('NOT ACCEPTABLE');
+// 		for(var i = 0; i < 3; i++)
+// 			if(mx.getElement(i, 0).less(mx.getElement(i, 0).neg()))
+// 				console.log('NOT ACCEPTABLE');
 
-		console.log(mx.toString());
+// 		console.log(mx.toString());
 
-	}
-	catch(ex)
-	{
-		console.log('[' + combination.join(', ') + ']: failure: ' + ex.message);
-	}
-});
+// 	}
+// 	catch(ex)
+// 	{
+// 		console.log('[' + combination.join(', ') + ']: failure: ' + ex.message);
+// 	}
+// });
 
 // try
 {

@@ -1,4 +1,4 @@
-var {N} = require('../../utils/number_types');
+var {N} = require('../utils/number_types');
 
 function GCD(a, b)
 {

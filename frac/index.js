@@ -1,6 +1,6 @@
 var {Z} = require('../utils/number_types'),
-	{GCD, LCM} = require('./utils/natural_math'),
-	{IAryth} = require('../utils/iaryth'),
+	{GCD, LCM} = require('./natural_math'),
+	{IAryth} = require('../mx/iaryth'),
 	{is} = require('../utils/is'),
 	{sprintf} = require('../utils/printf'),
 	{abs} = Math;
