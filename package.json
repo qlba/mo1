@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-	"start": "node .",
+    "start": "bash -c 'NODE_PATH=.node_modules node .'",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

@@ -40,6 +40,16 @@ class IAryth
 		return this.constructor.less(this, rhs);
 	}
 
+	getOne()
+	{
+		return this.constructor.getOne();
+	}
+
+	getZero()
+	{
+		return this.constructor.getZero();
+	}
+
 	isOne()
 	{
 		return this.constructor.isOne(this);
@@ -111,6 +121,16 @@ class IAryth
 	}
 
 	static clone()
+	{
+		throw new Error('Not implemented');
+	}
+	
+	static getOne()
+	{
+		throw new Error('Not implemented');
+	}
+
+	static getZero()
 	{
 		throw new Error('Not implemented');
 	}

@@ -2,9 +2,8 @@ var {Z} = require('../utils/number_types'),
 	{GCD, LCM} = require('./natural_math'),
 	{IAryth} = require('../mx/iaryth'),
 	{is} = require('../utils/is'),
-	{sprintf} = require('../utils/printf'),
+	sprintf = require('printf'),
 	{abs} = Math;
-
 
 class Frac extends IAryth
 {
@@ -116,6 +115,16 @@ class Frac extends IAryth
 			);
 
 		return lhs.p / lhs.q < rhs.p / rhs.q;
+	}
+
+	static getOne()
+	{
+		return new Frac(1, 1);
+	}
+
+	static getZero()
+	{
+		return new Frac(0, 1);
 	}
 
 	static clone(lhs)
