@@ -11,9 +11,9 @@ var {MathMx} = require('./mx/math_mx'),
 // 		[1, 1, 1]
 // 	];
 
-var {Frac} = require('./frac');
+// var {Frac} = require('./frac');
 
-var filler = mx => (_, i, j) => new Frac(mx[i][j], 1);
+// var filler = mx => (_, i, j) => new Frac(mx[i][j], 1);
 
 // var mmx1 = new MathMx(3, 3).fill(filler(mx1)),
 // 	mmx2 = new MathMx(3, 3).fill(filler(mx2));
@@ -34,17 +34,40 @@ var filler = mx => (_, i, j) => new Frac(mx[i][j], 1);
 // console.log(mmx1.invert().mul(mmx1).toString());
 
 var {delta} = require('./delta');
+var draw = require('wrx');
 
-var xs = [1, 2, 3];
-var F = x => x * x;
-var ss = [0.3, 0.1, 0.4];
+var xs = [1, 2, 3, 4];
+var F = x => Math.sin(x);
+var ss = [0.3, 0.1, 0.4, 0.2];
 var fs = [() => 1, x => x, x => x * x];
 
 var ys = xs.map((x, i) => F(x) + delta(ss[i]));
 
+var prox = approximate(xs, ys, ss, fs);
+
+function proxFunc(x) {
+	var sum = 0;
+
+	for(var i = 0; i < fs.length; i++)
+		sum += prox[0][i] * fs[i](x);
+
+	return sum;
+}
 
 
-console.log(approximate(xs, ys, ss, fs).toString("%.2f"));
+var analysis = new Array(100).fill(0).map((_, i) => 0.5 + 4 * (i / 100));
+
+var graphConfig = {
+	port: 8000,
+	type: 'scatter',
+	data: {datasets: [
+		{ label: 'F(x)', data: analysis.map(x => {return {x: x, y: F(x)};}), lineTension: 0, showLine: true, fill: false, borderColor: 'rgba(0, 0, 0, 1)', borderWidth: 1, pointRadius: 0 },
+		{ label: 'a(x)', data: analysis.map(x => {return {x: x, y: proxFunc(x)};}), lineTension: 0, showLine: true, fill: false, borderColor: 'rgba(255, 0, 0, 1)', borderWidth: 1, pointRadius: 0 },
+		{ type: 'bubble', pointStyle: 'crossRot', label: 'points', data: xs.map((x, i) => {return {x: x, y: ys[i], r: 30 * ss[i]};}), borderColor: 'rgba(255, 0, 255, 1)' }
+	]}
+};
+
+draw(graphConfig);
 
 
 function approximate(xs, ys, ss, fs)
