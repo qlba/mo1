@@ -154,11 +154,71 @@ var tasks = [
 			f(3), f(0), f(0), f(0), f(2), f(-5)
 		],
 		f(0)
-	)
+	),
+	new CanonicalTask(
+		5, 3,
+		[
+			[f( 2), f( 2), f( 3), f(-1), f(0)],
+			[f( 4), f( 3), f(-2), f( 0), f(1)],
+			[f( 1), f(-1), f( 3), f( 0), f(0)]
+		],
+		[
+			f(10),
+			f( 9),
+			f( 4)
+		],
+		[
+			f(1), f(4), f(-1), f(0), f(0)
+		],
+		f(0)
+	),
+	new CanonicalTask(
+		3, 2,
+		[
+			[f(2), f(3), f(-1)],
+			[f(4), f(1), f(-2)]
+		],
+		[
+			f(4),
+			f(3)
+		],
+		[
+			f(1), f(1), f(1)
+		],
+		f(0)
+	),
+	new CanonicalTask(
+		4, 2,
+		[
+			[f(2), f(3), f(1), f(0)],
+			[f(3), f(2), f(0), f(1)]
+		],
+		[
+			f(5),
+			f(4)
+		],
+		[f(-1), f(2), f(0), f(0)],
+		f(0)
+	),
+	new CanonicalTask(
+		3, 2,
+		[
+			[f(3), f( 1), f(-2)],
+			[f(4), f(-2), f( 3)]
+		],
+		[
+			f(2),
+			f(5)
+		],
+		[
+			f(1), f(-1), f(0)
+		],
+		f(0)
+	),
 ];
 
 
-var st = solveWithPureSimplexMethod(tasks[8]);
+var st = solveWithArtificialBasicMethod(tasks[12]);
 
 console.log(`${st}`);
 
