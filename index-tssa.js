@@ -38,14 +38,19 @@ var pow = y => x => Math.pow(x, y);
 var {delta} = require('./delta');
 var draw = require('wrx');
 
-var xs = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(x => 7 * x / 10);
-var F = x => Math.sin(x);
-var ss = xs.map(x => 0.01 * (x + 1));
-var fs = [pow(1), pow(2), pow(3)];
+var xs = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(x => 0.7 * x + 1);
+//var F = x => Math.pow(x, 3);
+var F = x => Math.sin(3 * x);
+var ss = xs.map(x => 0.2 /* * (x + 1) */);
+var ps = xs.map((x, i) => 0.2 /* * Math.sqrt(i) */);
+var fs = [x => Math.sin(3 * x), x => Math.cos(3 * x)];
 
-var ys = xs.map((x, i) => F(x) + delta(ss[i]));
+var ws = xs.map((x, i) => x + delta(ps[i]));
+var ys = ws.map((w, i) => F(w) + delta(ss[i]));
 
 var prox = approximate(xs, ys, ss, fs);
+
+console.log(prox[0].map((a, i) => a.toString('%.2f') + '*f' + (i + 1)).join(' + '));
 
 function proxFunc(x) {
 	var sum = 0;
@@ -57,7 +62,7 @@ function proxFunc(x) {
 }
 
 
-var analysis = new Array(100).fill(0).map((_, i) => 7 * (i / 100));
+var analysis = new Array(250).fill(0).map((_, i) => 1 + (8 - 1) * i / 250);
 
 var graphConfig = {
 	port: 3000,
@@ -65,10 +70,28 @@ var graphConfig = {
 	data: {datasets: [
 		{ label: 'F(x)', data: analysis.map(x => {return {x: x, y: F(x)};}), lineTension: 0, showLine: true, fill: false, borderColor: 'rgba(0, 0, 0, 1)', borderWidth: 1, pointRadius: 0 },
 		{ label: 'a(x)', data: analysis.map(x => {return {x: x, y: proxFunc(x)};}), lineTension: 0, showLine: true, fill: false, borderColor: 'rgba(255, 0, 0, 1)', borderWidth: 1, pointRadius: 0 },
-		{ type: 'bubble', pointStyle: 'crossRot', label: 'points', data: xs.map((x, i) => {return {x: x, y: ys[i], r: 15};}), borderColor: 'rgba(127, 127, 255, 1)' },
-		{ type: 'bubble', pointStyle: 'triangle', label: 'F(x) + 3\u03c3', data: xs.map((x, i) => {return {x: x, y: F(x) + 3 * ss[i], r: 5};}), borderColor: 'rgba(63, 255, 63, 1)' },
-		{ type: 'bubble', pointStyle: 'triangle', label: 'F(x) - 3\u03c3', data: xs.map((x, i) => {return {x: x, y: F(x) - 3 * ss[i], r: 5};}), borderColor: 'rgba(63, 255, 63, 1)' }
-	]}
+		{ type: 'bubble', pointStyle: 'circle', label: 'F(x)',   data: xs.map((x, i) => {return {x: xs[i], y: F(xs[i]), r: 4};}), backgroundColor: '#0000ff', borderColor: 'rgba(0, 0, 0, 0)' },
+		{ type: 'bubble', pointStyle: 'circle', label: 'F(w)',   data: xs.map((x, i) => {return {x: ws[i], y: F(ws[i]), r: 4};}), backgroundColor: '#5f00af', borderColor: 'rgba(0, 0, 0, 0)' },
+		{ type: 'bubble', pointStyle: 'circle', label: 'F(w)+v', data: xs.map((x, i) => {return {x: ws[i], y: ys[i], r: 4};}),    backgroundColor: '#af005f', borderColor: 'rgba(0, 0, 0, 0)' },
+		{ type: 'bubble', pointStyle: 'circle', label: 'input',  data: xs.map((x, i) => {return {x: xs[i], y: ys[i], r: 4};}),    backgroundColor: '#ff0000', borderColor: 'rgba(0, 0, 0, 0)' },
+
+
+
+		//{ type: 'bubble', pointStyle: 'triangle', label: 'F(x) + 3\u03c3', data: xs.map((x, i) => {return {x: x, y: F(x) + 3 * ss[i], r: 5};}), borderColor: 'rgba(63, 255, 63, 1)' },
+		//{ type: 'bubble', pointStyle: 'triangle', label: 'F(x) - 3\u03c3', data: xs.map((x, i) => {return {x: x, y: F(x) - 3 * ss[i], r: 5};}), borderColor: 'rgba(63, 255, 63, 1)' },
+		//{ type: 'bubble', pointStyle: 'triangle', label: 'x + 3\u03c3', data: xs.map((x, i) => {return {x: x + 3 * ps[i], y: F(x), r: 5};}), borderColor: 'rgba(63, 255, 255, 1)' },
+		//{ type: 'bubble', pointStyle: 'triangle', label: 'x - 3\u03c3', data: xs.map((x, i) => {return {x: x - 3 * ps[i], y: F(x), r: 5};}), borderColor: 'rgba(63, 255, 255, 1)' }
+	]},
+	options: {
+    scales: {
+      xAxes: [{
+        ticks: {
+          min: 0,
+          max: 9
+        }
+      }]
+    }
+  }
 };
 
 draw(graphConfig);
