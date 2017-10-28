@@ -5,6 +5,9 @@
         "es6": true,
         "node": true
     },
+    "parserOptions": {
+        "ecmaVersion": 8
+    },
     "extends": "eslint:recommended",
     "rules": {
         "indent": [
@@ -25,7 +28,8 @@
         ],
         "brace-style": [
             "error",
-            "allman"
-        ]
+            "1tbs"
+        ],
+        "no-console": "warn"
     }
 }
