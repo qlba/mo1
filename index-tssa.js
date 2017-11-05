@@ -1,56 +1,26 @@
 var {MathMx} = require('./mx/math_mx'),
 	{Double} = require('./double');
 
-// var mx1 = [
-// 		[1, 1, 1],
-// 		[1, 1, 1],
-// 		[1, 1, 1]
-// 	], mx2 = [
-// 		[1, 1, 1],
-// 		[1, 1, 1],
-// 		[1, 1, 1]
-// 	];
-
-// var {Frac} = require('./frac');
-
-// var filler = mx => (_, i, j) => new Frac(mx[i][j], 1);
-
-// var mmx1 = new MathMx(3, 3).fill(filler(mx1)),
-// 	mmx2 = new MathMx(3, 3).fill(filler(mx2));
-
-// console.log(mmx1.add(mmx2).toString());
-
-// var mx1 = [
-// 	[ 3,  4,  2],
-// 	[ 2, -1, -3],
-// 	[ 1,  5,  1]
-// ];
-
-// var mmx1 = new MathMx(3, 3).fill(filler(mx1));
-
-// console.log(mmx1.toString());
-// console.log(mmx1.transpose().toString());
-// console.log(mmx1.invert().toString());
-// console.log(mmx1.invert().mul(mmx1).toString());
-
 var pow = y => x => Math.pow(x, y);
 
 var {delta} = require('./delta');
 var draw = require('wrx');
 
-var xs = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(x => 0.7 * x + 1);
-//var F = x => Math.pow(x, 3);
-var F = x => Math.sin(3 * x);
-var ss = xs.map(x => 0.2 /* * (x + 1) */);
-var ps = xs.map((x, i) => 0.2 /* * Math.sqrt(i) */);
-var fs = [x => Math.sin(3 * x), x => Math.cos(3 * x)];
+var tab = (a, b, n) => new Array(n).fill(0).map((_, i) => a + (b - a) * i / (n - 1));
+
+var xs = tab(0, 1, 11); // [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => 6.28 * i / 9);
+
+var F = x => x;
+var ss = xs.map((x, i) => 0.1 * (i + 1) /* * (x + 1) */);
+var ps = xs.map((x, i) => 0 /* * Math.sqrt(i) */);
+var fs = [pow(0), pow(1), pow(3), pow(5), pow(7)];
 
 var ws = xs.map((x, i) => x + delta(ps[i]));
 var ys = ws.map((w, i) => F(w) + delta(ss[i]));
 
 var prox = approximate(xs, ys, ss, fs);
 
-console.log(prox[0].map((a, i) => a.toString('%.2f') + '*f' + (i + 1)).join(' + '));
+console.log(prox[0].map((a, i) => a.toString('%.4f') + '*f' + (i)).join(' + '));
 
 function proxFunc(x) {
 	var sum = 0;
@@ -62,7 +32,7 @@ function proxFunc(x) {
 }
 
 
-var analysis = new Array(250).fill(0).map((_, i) => 1 + (8 - 1) * i / 250);
+var analysis = tab(0, 1, 251) // new Array(250).fill(0).map((_, i) => 6.28 * i / 249);
 
 var graphConfig = {
 	port: 3000,
@@ -83,14 +53,14 @@ var graphConfig = {
 		//{ type: 'bubble', pointStyle: 'triangle', label: 'x - 3\u03c3', data: xs.map((x, i) => {return {x: x - 3 * ps[i], y: F(x), r: 5};}), borderColor: 'rgba(63, 255, 255, 1)' }
 	]},
 	options: {
-    scales: {
-      xAxes: [{
-        ticks: {
-          min: 0,
-          max: 9
-        }
-      }]
-    }
+    //scales: {
+      //xAxes: [{
+        //ticks: {
+          //min: 0,
+          //max: 9
+        //}
+      //}]
+    //}
   }
 };
 
