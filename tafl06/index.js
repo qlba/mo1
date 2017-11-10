@@ -2,6 +2,20 @@
 // const terminals = [';', 'a', '[', ']', '=', '+', '*', '(', ')', '-', '$'];
 // const nonterminals = ['Z', 'S', 'O', 'E', 'T', 'P'];
 
+const rules = {
+	 2: {lhs: 'S', rhs: 'O;S'},
+	 3: {lhs: 'S', rhs: 'O;'},
+	 4: {lhs: 'O', rhs: 'a[S]'},
+	 5: {lhs: 'O', rhs: 'a[S][S]'},
+	 6: {lhs: 'O', rhs: 'a=E'},
+	 7: {lhs: 'E', rhs: 'E+T'},
+	 8: {lhs: 'E', rhs: 'T'},
+	 9: {lhs: 'T', rhs: 'T*P'},
+	10: {lhs: 'T', rhs: 'P'},
+	11: {lhs: 'P', rhs: '(E)'},
+	12: {lhs: 'P', rhs: '-(E)'},
+	13: {lhs: 'P', rhs: 'a'},
+};
 
 const ACTION = new Array(28).fill(() => ({})), GOTO = new Array(28).fill(() => ({}));
 
@@ -91,17 +105,3 @@ GOTO[19]['T'] = 10;
 GOTO[19]['P'] = 11;
 GOTO[20]['S'] = 25;
 GOTO[20]['O'] = 2;
-
-// Z -> S
-// S -> O;S
-// S -> O;
-// O -> a[S]
-// O -> a[S][S]
-// O -> a=E
-// E -> E+T
-// E -> T
-// T -> T*P
-// T -> P
-// P -> (E)
-// P -> -(E)
-// P -> a
