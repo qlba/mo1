@@ -106,11 +106,24 @@ GOTO[19]['P'] = 11;
 GOTO[20]['S'] = 25;
 GOTO[20]['O'] = 2;
 
-const input = 'a[a=-(((a+a)*a+a)*a);a[a=a;];];$';
+// 'a[a=-(((a+a)*a+a)*a);a[a=a;];];$';
+// 'a[a=a*(a+-(a));][a=a;];a[a=a;];$'; // 
+
+const input = process.argv[2] + '$';
 const stack = [0];
 
 
+
+
 let inputPointer = 0;
+
+console.log();
+console.log(
+	'SHOP'.padStart(22).padEnd(40) +
+	'TAPE'.padStart(22).padEnd(40) +
+	'ACTION'.padStart(23).padEnd(40)
+);
+console.log();
 
 async function parse() {
 	for (let done = false; !done;) {
@@ -153,7 +166,7 @@ async function parse() {
 	
 		console.log((`${s}`).padEnd(4) + (`${a}`).padEnd(4) + action);
 
-		await new Promise(resolve => setTimeout(resolve, 500));
+		await new Promise(resolve => setTimeout(resolve, 100));
 	}
 }
 
