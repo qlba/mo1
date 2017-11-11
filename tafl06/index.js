@@ -105,3 +105,40 @@ GOTO[19]['T'] = 10;
 GOTO[19]['P'] = 11;
 GOTO[20]['S'] = 25;
 GOTO[20]['O'] = 2;
+
+const input = 'a=a;$';
+const stack = [0];
+
+
+let inputPointer = 0;
+
+for (let done = false; !done;) {
+	const a = input[inputPointer];
+	const s = stack[stack.length - 1];
+
+	let action;
+
+	switch ((ACTION[s][a] || 'e')[0]) {
+	case 't':
+		stack.push(Number(ACTION[s][a].slice(1)));
+		inputPointer++;
+		action = `TRANSFER ${ACTION[s][a].slice(1)}`;
+		break;
+	case 'r':
+		const rule = Number(ACTION[s][a].slice(1));
+		for (let i = 0; i < rules[rule].rhs.length; i++)
+			stack.pop();
+		if (!)
+		stack.push(Number(ACTION[s][a].slice(1)));
+		action = `REDUCE ${rule}`;
+		break;
+	case 'a':
+		done = action = 'ACCEPT';
+		break;
+	case 'e':
+		done = action = 'REJECT';
+		break;
+	default:
+		throw new Error('Parser error');
+	}
+}
