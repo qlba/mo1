@@ -17,7 +17,7 @@ const rules = {
 	13: {lhs: 'P', rhs: 'a'},
 };
 
-const ACTION = new Array(28).fill(() => ({})), GOTO = new Array(28).fill(() => ({}));
+const ACTION = new Array(28).fill(0).map(() => ({})), GOTO = new Array(28).fill(0).map(() => ({}));
 
 ACTION[ 0]['a'] = 't3';
 ACTION[ 1]['$'] = 'a';
@@ -106,44 +106,55 @@ GOTO[19]['P'] = 11;
 GOTO[20]['S'] = 25;
 GOTO[20]['O'] = 2;
 
-const input = 'a=a;$';
+const input = 'a[a=-(((a+a)*a+a)*a);a[a=a;];];$';
 const stack = [0];
 
 
 let inputPointer = 0;
 
-for (let done = false; !done;) {
-	const a = input[inputPointer];
-	const s = stack[stack.length - 1];
+async function parse() {
+	for (let done = false; !done;) {
+		process.stdout.write(stack.join(' ').padEnd(45) +
+			input.slice(inputPointer).padEnd(45));
 
-	let action;
-
-	switch ((ACTION[s][a] || 'e')[0]) {
-	case 't':
-		stack.push(Number(ACTION[s][a].slice(1)));
-		inputPointer++;
-		action = `TRANSFER ${ACTION[s][a].slice(1)}`;
-		break;
-	case 'r':
-		const rule = Number(ACTION[s][a].slice(1));
-		for (let i = 0; i < rules[rule].rhs.length; i++)
-			stack.pop();
-		if (!GOTO[s][rules[rule].lhs])
+		const a = input[inputPointer];
+		const s = stack[stack.length - 1];
+	
+		let action;
+	
+		switch ((ACTION[s][a] || 'e')[0]) {
+		case 't':
+			stack.push(Number(ACTION[s][a].slice(1)));
+			inputPointer++;
+			action = `TRANSFER ${ACTION[s][a].slice(1)}`;
+			break;
+		case 'r':
+			const rule = Number(ACTION[s][a].slice(1));
+			for (let i = 0; i < rules[rule].rhs.length; i++)
+				stack.pop();
+			const s1 = stack[stack.length - 1];
+			if (!GOTO[s1][rules[rule].lhs])
+				done = action = 'REJECT';
+			else {
+				stack.push(Number(GOTO[s1][rules[rule].lhs]));
+				action = 'REDUCE ' + `${rule}`.padEnd(6) +
+					`${rules[rule].lhs} -> ${rules[rule].rhs}`;
+			}
+			break;
+		case 'a':
+			done = action = 'ACCEPT';
+			break;
+		case 'e':
 			done = action = 'REJECT';
-		else {
-			stack.push(Number(GOTO[s][rules[rule].lhs]));
-			action = `REDUCE ${rule}`;
+			break;
+		default:
+			throw new Error('Parser error');
 		}
-		break;
-	case 'a':
-		done = action = 'ACCEPT';
-		break;
-	case 'e':
-		done = action = 'REJECT';
-		break;
-	default:
-		throw new Error('Parser error');
-	}
+	
+		console.log((`${s}`).padEnd(4) + (`${a}`).padEnd(4) + action);
 
-	console.log(action);
+		await new Promise(resolve => setTimeout(resolve, 500));
+	}
 }
+
+parse().catch(err => console.error(err));
