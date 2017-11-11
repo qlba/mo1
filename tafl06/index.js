@@ -128,9 +128,12 @@ for (let done = false; !done;) {
 		const rule = Number(ACTION[s][a].slice(1));
 		for (let i = 0; i < rules[rule].rhs.length; i++)
 			stack.pop();
-		if (!)
-		stack.push(Number(ACTION[s][a].slice(1)));
-		action = `REDUCE ${rule}`;
+		if (!GOTO[s][rules[rule].lhs])
+			done = action = 'REJECT';
+		else {
+			stack.push(Number(GOTO[s][rules[rule].lhs]));
+			action = `REDUCE ${rule}`;
+		}
 		break;
 	case 'a':
 		done = action = 'ACCEPT';
@@ -141,4 +144,6 @@ for (let done = false; !done;) {
 	default:
 		throw new Error('Parser error');
 	}
+
+	console.log(action);
 }
