@@ -66,6 +66,7 @@ ACTION[19]['a'] = 't14';
 ACTION[19]['('] = 't12';
 ACTION[19]['-'] = 't13';
 ACTION[20]['a'] = 't3';
+ACTION[21]['*'] = 't17';
 ACTION[21][';'] = 'r7';
 ACTION[21]['+'] = 'r7';
 ACTION[21][')'] = 'r7';
