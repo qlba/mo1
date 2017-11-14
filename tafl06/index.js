@@ -111,6 +111,7 @@ GOTO[20]['O'] = 2;
 
 const input = process.argv[2] + '$';
 const stack = [0];
+const chars = [];
 
 
 
@@ -119,16 +120,20 @@ let inputPointer = 0;
 
 console.log();
 console.log(
-	'SHOP'.padStart(22).padEnd(40) +
-	'TAPE'.padStart(22).padEnd(40) +
-	'ACTION'.padStart(23).padEnd(40)
+	'STACK'.padStart(22).padEnd(40) +
+	'INPUT'.padStart(22).padEnd(40) +
+	'INTERMEDIATE'.padStart(25).padEnd(40) +
+	'ACTION'.padStart(22).padEnd(40)
 );
 console.log();
 
 async function parse() {
 	for (let done = false; !done;) {
-		process.stdout.write(stack.join(' ').padEnd(45) +
-			input.slice(inputPointer).padEnd(45));
+		process.stdout.write(
+			stack.join(' ').padEnd(40) +
+			input.slice(inputPointer).padEnd(40) +
+			chars.join('').concat(input.slice(inputPointer)).padEnd(40)
+		);
 
 		const a = input[inputPointer];
 		const s = stack[stack.length - 1];
@@ -138,18 +143,22 @@ async function parse() {
 		switch ((ACTION[s][a] || 'e')[0]) {
 		case 't':
 			stack.push(Number(ACTION[s][a].slice(1)));
+			chars.push(a);
 			inputPointer++;
 			action = `TRANSFER ${ACTION[s][a].slice(1)}`;
 			break;
 		case 'r':
 			const rule = Number(ACTION[s][a].slice(1));
-			for (let i = 0; i < rules[rule].rhs.length; i++)
+			for (let i = 0; i < rules[rule].rhs.length; i++) {
 				stack.pop();
+				chars.pop();
+			}
 			const s1 = stack[stack.length - 1];
 			if (!GOTO[s1][rules[rule].lhs])
 				done = action = 'REJECT';
 			else {
 				stack.push(Number(GOTO[s1][rules[rule].lhs]));
+				chars.push(rules[rule].lhs);
 				action = 'REDUCE ' + `${rule}`.padEnd(6) +
 					`${rules[rule].lhs} -> ${rules[rule].rhs}`;
 			}
@@ -166,7 +175,7 @@ async function parse() {
 	
 		console.log((`${s}`).padEnd(4) + (`${a}`).padEnd(4) + action);
 
-		await new Promise(resolve => setTimeout(resolve, 100));
+		// await new Promise(resolve => setTimeout(resolve, 100));
 	}
 }
 
