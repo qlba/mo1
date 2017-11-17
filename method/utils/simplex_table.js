@@ -69,6 +69,26 @@ class SimplexTable extends JordanMx
 		};
 	}
 
+	getDualSolution()
+	{
+		var gamma = this.data[this.equationsCount].slice(1);
+		var count = this.varsCount - this.equationsCount;
+
+		var point = gamma.slice(count).concat(gamma.slice(0, count));
+
+		return {
+			point,
+			value: this.data[this.equationsCount][0],
+
+			toString: function(elementFormat)
+			{
+				return 'Z(' + this.point.map(
+					p => p.toString(elementFormat)
+				).join('; ') + ') = ' + this.value.toString(elementFormat);
+			}
+		};
+	}
+
 	toString(elementFormat, typesetRatio = 2)
 	{
 		var {m} = this, strings = new Array();
