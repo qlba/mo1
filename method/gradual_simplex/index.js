@@ -43,7 +43,7 @@ function gradualSimplex(task, basic)
 		splx.makeBasic(k, j0);
 	}
 
-	return splx.getDualSolution().toString();
+	return splx;
 }
 
 module.exports = {gradualSimplex};

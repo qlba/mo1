@@ -49,6 +49,8 @@ function dualSimplex(task)
 	console.log('Solution');
 	console.log(splx2.getDualSolution().toString());
 
+	return splx2;
+
 	// if(res.value.isNegative())
 	//     throw new Error('System has no solutions');
 

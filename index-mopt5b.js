@@ -24,4 +24,4 @@ var tasks = [
 	),
 ];
 
-console.log(gradualSimplex(tasks[0], [3, 4, 5]));
+console.log(gradualSimplex(tasks[0], [3, 4, 5]).getDualSolution().toString());
