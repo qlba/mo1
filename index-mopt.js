@@ -215,12 +215,45 @@ var tasks = [
 		],
 		f(0)
 	),
+	new CanonicalTask(
+		8, 4,
+		[
+			[f(-5), f( 2), f( 3), f(-3), f(1), f(0), f(0), f(0)],
+			[f( 1), f( 3), f( 7), f(-7), f(0), f(1), f(0), f(0)],
+			[f(-4), f( 4), f( 2), f(-2), f(0), f(0), f(1), f(0)],
+			[f( 1), f( 2), f(-3), f( 3), f(0), f(0), f(0), f(1)]
+		],
+		[
+			f(-4),
+			f( 9),
+			f( 1),
+			f( 4)
+		],
+		[
+			f(16), f(30), f(25), f(-25), f(0), f(0), f(0), f(0)
+		],
+		f(0)
+	),
 ];
 
 
-var st = solveWithArtificialBasicMethod(tasks[12]);
+// var st = solveWithArtificialBasicMethod(tasks[13]);
 
-console.log(`${st}`);
+// console.log(`${st}`);
+
+var {solveWithPureSimplexMethod} = require('./method/simplex/pure');
+var {solveWithBruteForceMethod} = require('./method/brute_force');
+var {SimplexTable} = require('./method/utils/simplex_table');
+
+// var st = new SimplexTable(tasks[13]);
+solveWithBruteForceMethod(tasks[13]);
+// st.makeBasic(0, 1);
+// st.makeBasic(1, 6);
+// st.makeBasic(2, 7);
+// st.makeBasic(3, 8);
+// solveWithPureSimplexMethod(st);
+
+// console.log(`${st}`);
 
 
 // tasks.forEach((task, index) =>

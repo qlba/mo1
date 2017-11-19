@@ -18,6 +18,17 @@ function solveWithBruteForceMethod(task)
 		{
 			toBasicView(splx, combination);
 
+			{
+				var v, deathRow = splx.data[splx.data.length - 1].slice(1);
+
+				for(v = 0; v < deathRow.length; v++)
+					if(deathRow[v].isNegative())
+						break;
+
+				if(v === deathRow.length)
+					console.log(splx.toString());
+			}
+
 			// console.log(splx.toString());
 			// console.log(splx.getSolution().toString());
 
