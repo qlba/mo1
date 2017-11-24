@@ -1,67 +1,72 @@
-var readline = require('readline');
+const Shop = require('./shop');
+const Tape = require('./tape');
+const {log} = require('./utils');
 
-var rl = readline.createInterface({
-	input: process.stdin,
-	output: process.stdout
-});
+const fmt = '%25s %25s %25s %2s %2s %s\n';
 
-function hidden(query, callback) {
-	var stdin = process.openStdin(),
-		i = 0;
-	process.stdin.on("data", function (char) {
-		char = char + "";
-		switch (char) {
-			case "\n":
-			case "\r":
-			case "\u0004":
-				stdin.pause();
-				break;
-			default:
-				process.stdout.write("\033[2K\033[200D" + query + "[" + ((i % 2 == 1) ? "=-" : "-=") + "]");
-				i++;
-				break;
+const shop = new Shop('E');
+const tape = new Tape('+(+(a,a),+(a,a))');
+
+const rules = {
+	1: {lhs: 'E', rhs: '+(E,E)'},
+	2: {lhs: 'E', rhs: 'a'}
+};
+
+const select = {
+	'E': {
+		'+': 1,
+		'a': 2
+	}
+};
+
+
+for(let done = false; !done;)
+{
+	const M = shop.peek();
+	const x = tape.get();
+
+	const state = {};
+	state.shop = shop.toString();
+	state.tape = tape.toString();
+	state.intermediate = tape.toStringRead() + shop.toString();
+	state.M = M;
+	state.x = x;
+
+	if (M === '$' && x === '$')
+	{
+		state.action = 'ACCEPT';
+		done = true;
+	}
+	else if (select[M])
+	{
+		if (!select[M][x])
+		{
+			state.action = 'REJECT';
+			done = true;
 		}
-	});
 
-	rl.question(query, function (value) {
-		rl.history = rl.history.slice(1);
-		callback(value);
-	});
+		state.action = `EXPAND ${rules[select[M][x]].lhs} -> ${rules[select[M][x]].rhs}`;
+
+		const rhs = rules[select[M][x]].rhs;
+		
+		tape.shift();
+		shop.pop();
+
+		for (let i = rhs.length - 1; i > 0; i--)
+			shop.push(rhs[i]);
+	}
+	else if (M === x)
+	{
+		tape.shift();
+		shop.pop();
+
+		state.action = `COMMIT ${x}`;
+	}
+	else
+	{
+		state.action = 'REJECT';
+		done = true;
+	}
+
+	log(fmt, state.shop, state.tape, state.intermediate, state.M, state.x, state.action);
 }
-
-hidden("password : ", function (password) {
-	console.log("Your password : " + password);
-});
-
-var readline = require('readline');
-
-var rl = readline.createInterface({
-	input: process.stdin,
-	output: process.stdout
-});
-
-function hidden(query, callback) {
-	var stdin = process.openStdin();
-	process.stdin.on("data", function (char) {
-		char = char + "";
-		switch (char) {
-			case "\n":
-			case "\r":
-			case "\u0004":
-				stdin.pause();
-				break;
-			default:
-				process.stdout.write("\033[2K\033[200D" + query + Array(rl.line.length + 1).join("*"));
-				break;
-		}
-	});
-
-	rl.question(query, function (value) {
-		rl.history = rl.history.slice(1);
-		callback(value);
-	});
-}
-
-hidden("password : ", function (password) {
-	console.log("Your password : " + password);
-});

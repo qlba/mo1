@@ -1,0 +1,36 @@
+const BUF_SIZ = 1024;
+
+module.exports = class Shop {
+	constructor(initial) {
+		this.stack = new Array(BUF_SIZ);
+		this.ptr = -1;
+
+		this.stack[0] = '$';
+		this.stack[1] = initial;
+		this.ptr = 1;
+	}
+
+	push(element) {
+		this.stack[++this.ptr] = element;
+
+		if (this.ptr >= this.stack.length) {
+			throw new Error('Stack overflow');
+		}
+	}
+
+	peek() {
+		return this.stack[this.ptr];
+	}
+
+	pop() {
+		if (this.ptr === -1) {
+			throw new Error('Stack underflow');
+		}
+
+		return this.stack[this.ptr--];
+	}
+
+	toString() {
+		return this.stack.slice(0, this.ptr + 1).reverse().join('');
+	}
+};
