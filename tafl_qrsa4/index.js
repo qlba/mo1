@@ -1,54 +1,21 @@
-// class Tape {
-// 	constructor(stream) {
-// 		this.stream = stream;
-// 		this.next = 
-// 	}
+var stdin = process.stdin;
 
+// without this, we would only get streams once enter is pressed
+stdin.setRawMode(true);
 
-// }
+// resume stdin in the parent process (node app won't quit all by itself
+// unless an error or process.exit() happens)
+stdin.resume();
 
-const EventEmitter = require('events');
+// i don't want binary, do you?
+stdin.setEncoding('utf8');
 
-function Faucet(stream)
-{
-	var faucet = new EventEmitter();
-
-	stream.on('data', (chunk) => {
-		for(const ch of chunk)
-			ch && faucet.emit('data', ch);
-	});
-
-	stream.on('end', () => {
-		faucet.emit('end');
-	});
-
-	stream.on('error', (e) => {
-		faucet.emit('error', e);
-	});
-
-	return () => new Promise((resolve, reject) => {
-		faucet.once('data', (ch) => resolve(ch));
-		faucet.once('end', (ch) => resolve(ch));
-		faucet.once('error', (e) => reject(e));
-	});
-}
-
-
-function Tape(stream) {
-	const buffer = [];
-
-	return () => new Promise((resolve, reject) => {
-		if (buffer.length) {
-
-		}
-	});
-}
-
-
-
-
-// const {stdin} = process;
-
-// stdin.on('data', (chunk) => {
-
-// });
+// on any data into stdin
+stdin.on('data', function (key) {
+	// ctrl-c ( end of text )
+	if (key === '\u0003') {
+		process.exit();
+	}
+	// write the key to stdout all normal like
+	console.log(key.charCodeAt(0));
+});
