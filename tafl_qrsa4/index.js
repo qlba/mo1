@@ -2,7 +2,7 @@ const Shop = require('./shop');
 const Tape = require('./tape');
 const {log} = require('./utils');
 
-const fmt = '%25s %25s %25s %2s %2s %s\n';
+const fmt = '%4d %25s %25s %25s  %s  %s  %s\n';
 
 const shop = new Shop('E');
 const tape = new Tape('+(+(a,a),+(a,a))');
@@ -20,7 +20,7 @@ const select = {
 };
 
 
-for(let done = false; !done;)
+for(let round = 0, done = false; !done; round++)
 {
 	const M = shop.peek();
 	const x = tape.get();
@@ -34,18 +34,12 @@ for(let done = false; !done;)
 
 	if (M === '$' && x === '$')
 	{
-		state.action = 'ACCEPT';
+		state.action = 'A';
 		done = true;
 	}
-	else if (select[M])
+	else if (select[M] && select[M][x])
 	{
-		if (!select[M][x])
-		{
-			state.action = 'REJECT';
-			done = true;
-		}
-
-		state.action = `EXPAND ${rules[select[M][x]].lhs} -> ${rules[select[M][x]].rhs}`;
+		state.action = `X ${rules[select[M][x]].lhs} -> ${rules[select[M][x]].rhs}`;
 
 		const rhs = rules[select[M][x]].rhs;
 		
@@ -60,13 +54,13 @@ for(let done = false; !done;)
 		tape.shift();
 		shop.pop();
 
-		state.action = `COMMIT ${x}`;
+		state.action = `C ${x}`;
 	}
 	else
 	{
-		state.action = 'REJECT';
+		state.action = 'R';
 		done = true;
 	}
 
-	log(fmt, state.shop, state.tape, state.intermediate, state.M, state.x, state.action);
+	log(fmt, round, state.shop, state.tape, state.intermediate, state.M, state.x, state.action);
 }
