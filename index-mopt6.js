@@ -27,11 +27,16 @@ var f = (x, y = 1) => new Frac(x, y);
 // 	[f(1), f(3), f(4), f(1, 2)]
 // ];
 
+// var game = [
+// 	[f( 7), f( 3), f( 4)],
+// 	[f( 5), f( 4), f( 9)],
+// 	[f( 9), f(12), f( 5)],
+// 	[f(10), f( 7), f( 6)]
+// ];
+
 var game = [
-	[f( 7), f( 3), f( 4)],
-	[f( 5), f( 4), f( 9)],
-	[f( 9), f(12), f( 5)],
-	[f(10), f( 7), f( 6)]
+	[f(  7), f(-10)],
+	[f( -5), f(  2)]
 ];
 
 
@@ -49,7 +54,7 @@ for(var i = 0; i < m; i++)
 			C = game[i][j];
 
 C = C.sub(C.getOne());
-C = C.getZero();
+// C = C.getZero();
 
 // var transposed = new Array(n);
 
