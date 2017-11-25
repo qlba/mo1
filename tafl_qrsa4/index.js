@@ -24,13 +24,15 @@ const postproc = {
 	},
 	2: ([,,E1,,E2]) =>
 	{
-		return {type: 'add', lhs: E1, rhs: E2};
+		return {type: 'op', op: 'add', lhs: E1, rhs: E2};
 	},
 	3: ([a]) =>
 	{
-		return {type: 'id', value: a};
+		return {type: 'imm', imm: 'id', value: a};
 	}
 };
+
+
 
 
 const Syntan = require('./syntan');
@@ -40,7 +42,6 @@ const syntan = new Syntan(rules, init, select, postproc);
 
 const parsed = syntan.parse('+(+(a,a),+(a,a))');
 
-function parseExpr
 
 
 console.dir(parsed.accept && parsed.result, {depth: null});
@@ -52,3 +53,31 @@ console.dir(parsed.accept && parsed.result, {depth: null});
 // 	2: pp,
 // 	3: pp
 // };
+
+function entry(parsed)
+{
+	// assert: parsed.type === expr
+	return expr(parsed.root);
+}
+
+function expr(exprRoot)
+{
+	
+}
+
+
+function ulmanseti(exprRoot)
+{
+
+
+
+}
+
+function markup(expr)
+{
+	if (expr.type === 'imm')
+		return expr.mark = 1;
+
+	if (expr.lhs.type === 'imm')
+		expr.lhs.mark = 
+}
