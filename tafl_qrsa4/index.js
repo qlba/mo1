@@ -28,7 +28,7 @@ const postproc = {
 	},
 	3: (state, [a]) =>
 	{
-		return {type: 'value', loc: 'stack', id: a};
+		return {type: 'value', loc: {type: 'id', id: a}};
 	}
 };
 
@@ -40,98 +40,153 @@ const syntan = new Syntan(rules, init, select, postproc);
 
 const state = {};
 
-
 const parsed = syntan.parse(state, '+(+(a,a),+(a,a))');
 
 if (!parsed.accept)
 	process.exit(-1);
 
-state.functions = {main: {varSize: 12}};
+state.globals = [];
+
+state.funcs = {
+	main: {
+		args: [
+			{id: 'a'}
+		],
+		locals: [
+			{id: 'b'}
+		]
+	}
+};
 
 // console.dir(parsed.accept && parsed.result, {depth: null});
-console.log(entry(state, {func: 'main'}, parsed.result).out.join('\n'));
+console.log(entry(state, {}, parsed.result).out.join('\n'));
 
-// const pp = (...args) => {console.dir(args); return ' ' + args.join('') + ' ';};
-
-// const codegen = {
-// 	1: pp,
-// 	2: pp,
-// 	3: pp
-// };
 
 function entry(state, cgState, parsed)
 {
+	return func(state, {func: 'main'}, parsed);
+}
+
+function func(state, cgState, body)
+{
+	const name = cgState.func;
+	const func = state.funcs[cgState.func];
+
+	const args = {};
+
+	for (let i = 0; i < func.args.length; i++)
+	{
+		const arg = func.args[i];
+
+		if (args[arg.id])
+			throw new Error(`Argument ${arg.id} redeclaration in function ${name}`);
+
+		args[arg.id] = {
+			loc: {
+				type: 'stack',
+				disp: i
+			}
+		};
+	}
+
+	const locals = {};
+
+	for (let i = 0; i < func.locals.length; i++)
+	{
+		const local = func.locals[i];
+
+		if (args[local.id])
+			throw new Error(`Local variable ${local.id} declaration over argument in function ${name}`);
+
+		if (locals[local.id])
+			throw new Error(`Local variable ${local.id} redeclaration in function ${name}`);
+
+		locals[local.id] = {
+			loc: {
+				type: 'stack',
+				disp: func.args.length + 1 + i
+			}
+		};
+	}
+
+	const subCgState = {
+		usedRegs: {eax: false, ebx: false, ecx: false, edx: false, esi: false, edi: false},
+		busyRegs: {eax: false, ebx: false, ecx: false, edx: false, esi: false, edi: false},
+		scope: Object.assign({},
+			state.globals,
+			args,
+			locals
+		)
+	};
+
+	const expr = expression(state, subCgState, body.root);
+
+	const regSave = [
+		
+	]
+	
+
+
 	return {
 		out: [
 			`${cgState.func}:`,
 			'        PUSH    ebp',
 			'        MOV     ebp, esp',
-			`        SUB     esp, ${state.functions[cgState.func].varSize}`,
-			...expression(state, cgState, parsed.root).out,
-			`        ADD     esp, ${state.functions[cgState.func].varSize}`,
+			`        ADD     ebp, ${1 + func.args.length}`,
+			`        SUB     esp, ${func.locals.length}`,
+			...expr.out,
+			'        MOV     esp, ebp',
 			'        POP     ebp'
 		]
 	};
 }
 
-
-const optypes = {
-	'MUL': [
-		{dest: 'eax', lhs: 'eax', rhs: 'reg'},
-		{dest: 'eax', lhs: 'eax', rhs: 'mem'},
-		{}
-	]
-};
-
-// used regs total
-// used regs currently
-
 function expression(state, cgState, expr)
 {
-	if (expr.type === 'op')
-	{
-		const lhs = expression(state, expr.lhs);
-		const rhs = expression(state, expr.rhs);
+	// if (expr.type === 'op')
+	// {
+	// 	const lhs = expression(state, expr.lhs);
+	// 	const rhs = expression(state, expr.rhs);
 
-		switch (lhs.loc)
-		{
-			case 
-		}
+	// 	switch (lhs.loc)
+	// 	{
+	// 		case 'reg'
+	// 	}
 
-		switch (lhs.loc) {
+	// 	switch (lhs.loc) {
 			
-		}
+	// 	}
 
-		if ()
+	// 	if ()
 
-		return {
-			out: [
-				...lhs.out,
-				...rhs.out,
-				`        ${expr.op}`
-			]
-		};
-	}
-	else
-	{
-		expr.out = [];
+	// 	return {
+	// 		out: [
+	// 			...lhs.out,
+	// 			...rhs.out,
+	// 			`        ${expr.op}`
+	// 		]
+	// 	};
+	// }
+	// else
+	// {
+	// 	expr.out = [];
 
-		return expr;
+	// 	return expr;
 
 
-		switch (expr.loc)
-		{
-			case 'stack':
-				return 
-		}
+	// 	switch (expr.loc)
+	// 	{
+	// 		case 'stack':
+	// 			return 
+	// 	}
 
-		if (cgState.) {
+	// 	if (cgState.) {
 
-		}
+	// 	}
 
-		return {
-			loc: {type: 'stack'},
-			out: [`        PUSH    ${expr.value}`]
-		};
-	}
+	// 	return {
+	// 		loc: {type: 'stack'},
+	// 		out: [`        PUSH    ${expr.value}`]
+	// 	};
+	// }
 }
