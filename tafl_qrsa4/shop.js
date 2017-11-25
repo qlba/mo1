@@ -1,13 +1,12 @@
 const BUF_SIZ = 1024;
 
 module.exports = class Shop {
-	constructor(initial) {
+	constructor(...state) {
 		this.stack = new Array(BUF_SIZ);
 		this.ptr = -1;
 
-		this.stack[0] = '$';
-		this.stack[1] = initial;
-		this.ptr = 1;
+		for(let i = 0; i < state.length; i++)
+			this.stack[++this.ptr] = state[i];
 	}
 
 	push(element) {

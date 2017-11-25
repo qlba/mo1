@@ -1,6 +1,6 @@
 module.exports = class Tape {
 	constructor(input) {
-		this.input = input + '$';
+		this.input = input;
 		this.ptr = 0;
 	}
 
