@@ -1,4 +1,6 @@
-const fmt = '%4d %25s %25s %25s  %s  %s  %s\n';
+const chalk = require('chalk');
+
+const fmt = '%4d %25s %25s  %s  %s  %s\n';
 const {log} = require('./utils');
 
 const Shop = require('./shop');
@@ -26,12 +28,19 @@ const select = {
 	}
 };
 
+// const pp = (...args) => {console.dir(args); return ' ' + args.join('') + ' ';};
+
+// const codegen = {
+// 	1: pp,
+// 	2: pp,
+// 	3: pp
+// };
+
 const codegen = {
 	1: ([E]) => {console.log(E);},
-	2: ([,,E1,,E2]) => {console.log(`${E1} + ${E2}`);},
-	3: ([a]) => {console.log(a);}
+	2: ([,,E1,,E2]) => {return `${E1} + ${E2}`;},
+	3: ([a]) => {return a;}
 };
-
 
 for(let round = 0, done = false; !done; round++)
 {
@@ -41,26 +50,30 @@ for(let round = 0, done = false; !done; round++)
 	const state = {};
 	state.shop = shop.toString();
 	state.tape = tape.toString();
-	state.intermediate = tape.toStringRead() + shop.toString();
 	state.M = M;
 	state.x = x;
 
 	if (M === '$' && x === '$')
 	{
-		state.action = 'A';
+		state.action = chalk.green('A');
 		done = true;
 	}
 	else if (typeof(M) === 'number')
 	{
-		state.action = `P ${M}`;
+		state.action = chalk.yellow(`P ${M}`);
 
-		/// ...
+		const rhs = rules[M].rhs, args = new Array(rhs.length);
+
+		for (let i = rhs.length - 1; i >= 0; i--)
+			args[i] = ppshop.pop();
+
+		ppshop.push(codegen[M](args));
 
 		shop.pop();
 	}
 	else if (select[M] && select[M][x])
 	{
-		state.action = `X ${rules[select[M][x]].lhs} -> ${rules[select[M][x]].rhs}`;
+		state.action = chalk.cyan(`X ${rules[select[M][x]].lhs} -> ${rules[select[M][x]].rhs}`);
 
 		const rhs = rules[select[M][x]].rhs;
 
@@ -75,13 +88,15 @@ for(let round = 0, done = false; !done; round++)
 		tape.shift();
 		shop.pop();
 
-		state.action = `M ${x}`;
+		ppshop.push(x);
+
+		state.action = chalk.magenta(`M ${x}`);
 	}
 	else
 	{
-		state.action = 'R';
+		state.action = chalk.red('R');
 		done = true;
 	}
 
-	log(fmt, round, state.shop, state.tape, state.intermediate, state.M, state.x, state.action);
+	log(fmt, round, state.shop, state.tape, state.M, state.x, state.action);
 }
