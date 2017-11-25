@@ -1,0 +1,8 @@
+<-- esp = ebp-argslen-4 = ebp-argslen-locslen-1
+loc 2 <-- ebp-argslen-3 = ebp-argslen-locslen
+loc 1 <-- ebp-argslen-2     argslen+1+i
+loc 0 <-- ebp-argslen-1
+ret & <-- ebp-argslen
+arg 2 <-- ebp-2             i
+arg 1 <-- ebp-1
+arg 0 <-- ebp-0
