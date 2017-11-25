@@ -18,17 +18,17 @@ const select = {
 };
 
 const postproc = {
-	1: ([E]) =>
+	1: (state, [E]) =>
 	{
 		return {type: 'expr', root: E};
 	},
-	2: ([,,E1,,E2]) =>
+	2: (state, [,,E1,,E2]) =>
 	{
-		return {type: 'op', op: 'add', lhs: E1, rhs: E2};
+		return {type: 'op', op: 'ADD', lhs: E1, rhs: E2};
 	},
-	3: ([a]) =>
+	3: (state, [a]) =>
 	{
-		return {type: 'imm', imm: 'id', value: a};
+		return {type: 'value', loc: 'stack', id: a};
 	}
 };
 
@@ -36,15 +36,20 @@ const postproc = {
 
 
 const Syntan = require('./syntan');
-
 const syntan = new Syntan(rules, init, select, postproc);
 
-
-const parsed = syntan.parse('+(+(a,a),+(a,a))');
-
+const state = {};
 
 
-console.dir(parsed.accept && parsed.result, {depth: null});
+const parsed = syntan.parse(state, '+(+(a,a),+(a,a))');
+
+if (!parsed.accept)
+	process.exit(-1);
+
+state.functions = {main: {varSize: 12}};
+
+// console.dir(parsed.accept && parsed.result, {depth: null});
+console.log(entry(state, {func: 'main'}, parsed.result).out.join('\n'));
 
 // const pp = (...args) => {console.dir(args); return ' ' + args.join('') + ' ';};
 
@@ -54,30 +59,79 @@ console.dir(parsed.accept && parsed.result, {depth: null});
 // 	3: pp
 // };
 
-function entry(parsed)
+function entry(state, cgState, parsed)
 {
-	// assert: parsed.type === expr
-	return expr(parsed.root);
+	return {
+		out: [
+			`${cgState.func}:`,
+			'        PUSH    ebp',
+			'        MOV     ebp, esp',
+			`        SUB     esp, ${state.functions[cgState.func].varSize}`,
+			...expression(state, cgState, parsed.root).out,
+			`        ADD     esp, ${state.functions[cgState.func].varSize}`,
+			'        POP     ebp'
+		]
+	};
 }
 
-function expr(exprRoot)
+
+const optypes = {
+	'MUL': [
+		{dest: 'eax', lhs: 'eax', rhs: 'reg'},
+		{dest: 'eax', lhs: 'eax', rhs: 'mem'},
+		{}
+	]
+};
+
+// used regs total
+// used regs currently
+
+function expression(state, cgState, expr)
 {
-	
-}
+	if (expr.type === 'op')
+	{
+		const lhs = expression(state, expr.lhs);
+		const rhs = expression(state, expr.rhs);
+
+		switch (lhs.loc)
+		{
+			case 
+		}
+
+		switch (lhs.loc) {
+			
+		}
+
+		if ()
+
+		return {
+			out: [
+				...lhs.out,
+				...rhs.out,
+				`        ${expr.op}`
+			]
+		};
+	}
+	else
+	{
+		expr.out = [];
+
+		return expr;
 
 
-function ulmanseti(exprRoot)
-{
+		switch (expr.loc)
+		{
+			case 'stack':
+				return 
+		}
 
+		if (cgState.) {
 
+		}
 
-}
-
-function markup(expr)
-{
-	if (expr.type === 'imm')
-		return expr.mark = 1;
-
-	if (expr.lhs.type === 'imm')
-		expr.lhs.mark = 
+		return {
+			loc: {type: 'stack'},
+			out: [`        PUSH    ${expr.value}`]
+		};
+	}
 }

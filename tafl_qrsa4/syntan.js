@@ -12,7 +12,7 @@ module.exports = class Syntan
 		});
 	}
 
-	parse(input)
+	parse(state, input)
 	{
 		const {rules, init, select, postproc} = this;
 	
@@ -41,20 +41,20 @@ module.exports = class Syntan
 			}
 			else if (typeof(M) === 'number')
 			{
-				state.action = chalk.yellow(`P ${M}`);
+				state.action = chalk.cyan(`P  ${M}`);
 		
 				const rhs = rules[M].rhs, args = new Array(rhs.length);
 		
 				for (let i = rhs.length - 1; i >= 0; i--)
 					args[i] = ppshop.pop();
 		
-				ppshop.push(postproc[M](args));
+				ppshop.push(postproc[M](state, args));
 		
 				shop.pop();
 			}
 			else if (select[M] && select[M][x])
 			{
-				state.action = chalk.cyan(`X ${rules[select[M][x]].lhs} -> ${rules[select[M][x]].rhs}`);
+				state.action = chalk.yellow(`X  ${rules[select[M][x]].lhs} -> ${rules[select[M][x]].rhs}`);
 		
 				const rhs = rules[select[M][x]].rhs;
 		
@@ -71,7 +71,7 @@ module.exports = class Syntan
 		
 				ppshop.push(x);
 		
-				state.action = chalk.magenta(`M ${x}`);
+				state.action = chalk.magenta(`M  ${x}`);
 			}
 			else
 			{
