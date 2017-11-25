@@ -1,26 +1,30 @@
 module.exports = class Tape {
-	constructor(input) {
+	constructor(input)
+	{
 		this.input = input;
 		this.ptr = 0;
 	}
 
-	get() {
+	get()
+	{
 		return this.input[this.ptr];
 	}
 
-	shift() {
+	shift()
+	{
 		this.ptr++;
 
-		if (this.ptr >= this.input.length) {
+		if (this.ptr >= this.input.length)
 			throw new Error('Input exceeding');
-		}
 	}
 
-	toString() {
+	toString()
+	{
 		return this.input.slice(this.ptr);
 	}
 
-	toStringRead() {
+	toStringRead()
+	{
 		return this.input.slice(0, this.ptr);
 	}
 };

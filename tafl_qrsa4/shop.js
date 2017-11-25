@@ -1,7 +1,9 @@
 const BUF_SIZ = 1024;
 
-module.exports = class Shop {
-	constructor(...state) {
+module.exports = class Shop
+{
+	constructor(...state)
+	{
 		this.stack = new Array(BUF_SIZ);
 		this.ptr = -1;
 
@@ -9,7 +11,8 @@ module.exports = class Shop {
 			this.stack[++this.ptr] = state[i];
 	}
 
-	push(element) {
+	push(element)
+	{
 		this.stack[++this.ptr] = element;
 
 		if (this.ptr >= this.stack.length) {
@@ -17,11 +20,13 @@ module.exports = class Shop {
 		}
 	}
 
-	peek() {
+	peek()
+	{
 		return this.stack[this.ptr];
 	}
 
-	pop() {
+	pop()
+	{
 		if (this.ptr === -1) {
 			throw new Error('Stack underflow');
 		}
@@ -29,7 +34,8 @@ module.exports = class Shop {
 		return this.stack[this.ptr--];
 	}
 
-	toString() {
+	toString()
+	{
 		return this.stack.slice(0, this.ptr + 1).reverse().join('');
 	}
 };
