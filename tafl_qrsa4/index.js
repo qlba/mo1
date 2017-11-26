@@ -1,7 +1,10 @@
+const _ = require('lodash');
+
 const rules = {
 	1: {lhs: 'S', rhs: 'E'},
 	2: {lhs: 'E', rhs: '+(E,E)'},
-	3: {lhs: 'E', rhs: 'a'}
+	3: {lhs: 'E', rhs: 'a'},
+	4: {lhs: 'E', rhs: '1'}
 };
 
 const init = 'S';
@@ -9,11 +12,13 @@ const init = 'S';
 const select = {
 	'S': {
 		'+': 1,
-		'a': 1
+		'a': 1,
+		'1': 1
 	},
 	'E': {
 		'+': 2,
-		'a': 3
+		'a': 3,
+		'1': 4
 	}
 };
 
@@ -28,7 +33,11 @@ const postproc = {
 	},
 	3: (state, [a]) =>
 	{
-		return {type: 'value', loc: {type: 'id', id: a}};
+		return {type: 'id', id: a};
+	},
+	4: (state, [v]) =>
+	{
+		return {type: 'imm', value: v};
 	}
 };
 
@@ -110,8 +119,7 @@ function func(state, cgState, body)
 	}
 
 	const subCgState = {
-		usedRegs: {eax: false, ebx: false, ecx: false, edx: false, esi: false, edi: false},
-		busyRegs: {eax: false, ebx: false, ecx: false, edx: false, esi: false, edi: false},
+		usedRegs: [],
 		scope: Object.assign({},
 			state.globals,
 			args,
@@ -119,13 +127,7 @@ function func(state, cgState, body)
 		)
 	};
 
-	const expr = expression(state, subCgState, body.root);
-
-	const regSave = [
-		
-	]
-	
-
+	const expr = expression(state, subCgState, [], body.root);
 
 	return {
 		out: [
@@ -134,59 +136,79 @@ function func(state, cgState, body)
 			'        MOV     ebp, esp',
 			`        ADD     ebp, ${1 + func.args.length}`,
 			`        SUB     esp, ${func.locals.length}`,
+			...subCgState.usedRegs.map(reg => `        PUSH    ${reg}`),
 			...expr.out,
+			...subCgState.usedRegs.map(reg => `        POP     ${reg}`).reverse(),
 			'        MOV     esp, ebp',
 			'        POP     ebp'
 		]
 	};
 }
 
-function expression(state, cgState, expr)
+function expression(state, cgState, busyRegs, expr)
 {
-	// if (expr.type === 'op')
-	// {
-	// 	const lhs = expression(state, expr.lhs);
-	// 	const rhs = expression(state, expr.rhs);
+	if (expr.type === 'op')
+	{
+		const lhs = expression(state, cgState, expr.lhs);
+		const rhs = expression(state, cgState, expr.rhs);
 
-	// 	switch (lhs.loc)
-	// 	{
-	// 		case 'reg'
-	// 	}
+		const out = [...lhs.out, ...rhs.out];
 
-	// 	switch (lhs.loc) {
+		if (lhs.loc.type !== 'reg' && rhs.loc.type !== 'reg')
+		{
+			var freeReg = _.difference(regs, busyRegs)[0];
+
+			if(!freeReg)
+				out.push(`        PUSH    ${regs[0]}`);
+
 			
-	// 	}
 
-	// 	if ()
+			if(!freeReg)
+				out.push(`        XCHG    ${regs[0]}, [esp-1]`);
+		}
 
-	// 	return {
-	// 		out: [
-	// 			...lhs.out,
-	// 			...rhs.out,
-	// 			`        ${expr.op}`
-	// 		]
-	// 	};
-	// }
-	// else
+		switch (lhs.loc.type)
+		{
+		case 'stack':
+			out.push(`        MOV     ${X}, [ebp${-lhs.loc.disp || undefined}]`);
+		}
+
+		switch (lhs.loc) {
+			
+		}
+
+		out.push(`        ${expr.op}`);
+
+		return {
+			out
+		};
+	}
+	else if (expr.type === 'id')
+	{
+		if (!cgState.scope[expr.id])
+			throw new Error(`Undefined reference to ${expr.id}`);
+
+		return cgState.scope[expr.id];
+	}
+	else if (expr.type === 'imm')
+	{
+		return {loc: expr};
+	}
+	else 
+		throw new Error();
+
+	// switch (expr.loc)
 	// {
-	// 	expr.out = [];
-
-	// 	return expr;
-
-
-	// 	switch (expr.loc)
-	// 	{
-	// 		case 'stack':
-	// 			return 
-	// 	}
-
-	// 	if (cgState.) {
-
-	// 	}
-
-	// 	return {
-	// 		loc: {type: 'stack'},
-	// 		out: [`        PUSH    ${expr.value}`]
-	// 	};
+	// 	case 'stack':
+	// 		return 
 	// }
+
+	// if (cgState.) {
+
+	// }
+
+	// return {
+	// 	loc: {type: 'stack'},
+	// 	out: [`        PUSH    ${expr.value}`]
+	// };
 }
