@@ -1,5 +1,3 @@
-const _ = require('lodash');
-
 const rules = {
 	1: {lhs: 'S', rhs: 'E'},
 	2: {lhs: 'E', rhs: '+(E,E)'},
@@ -25,23 +23,21 @@ const select = {
 const postproc = {
 	1: (state, [E]) =>
 	{
-		return {type: 'expr', root: E};
+		return {type: 'expression', root: E};
 	},
 	2: (state, [,,E1,,E2]) =>
 	{
-		return {type: 'op', op: 'ADD', lhs: E1, rhs: E2};
+		return {type: 'operation/add', mnemonics: 'ADD', commutative: true, lhs: E1, rhs: E2};
 	},
 	3: (state, [a]) =>
 	{
-		return {type: 'id', id: a};
+		return {type: 'value/id', id: a};
 	},
 	4: (state, [v]) =>
 	{
-		return {type: 'imm', value: v};
+		return {type: 'value/literal', value: v};
 	}
 };
-
-
 
 
 const Syntan = require('./syntan');
@@ -54,161 +50,147 @@ const parsed = syntan.parse(state, '+(+(a,a),+(a,a))');
 if (!parsed.accept)
 	process.exit(-1);
 
-state.globals = [];
+// state.globals = [];
 
-state.funcs = {
-	main: {
-		args: [
-			{id: 'a'}
-		],
-		locals: [
-			{id: 'b'}
-		]
-	}
-};
+// state.funcs = {
+// 	main: {
+// 		args: [
+// 			{id: 'a'}
+// 		],
+// 		locals: [
+// 			{id: 'b'}
+// 		]
+// 	}
+// };
 
 // console.dir(parsed.accept && parsed.result, {depth: null});
-console.log(entry(state, {}, parsed.result).out.join('\n'));
+console.log(entry(state, parsed.result).out.join('\n'));
 
 
-function entry(state, cgState, parsed)
+function entry(state, parsed)
 {
-	return func(state, {func: 'main'}, parsed);
+	const main = {
+		locals: [
+			{id: 'a'},
+			{id: 'b'},
+			{id: 'c'}
+		]
+	};
+
+	return func(state, main, parsed);
 }
 
-function func(state, cgState, body)
+function func(state, func, body)
 {
-	const name = cgState.func;
-	const func = state.funcs[cgState.func];
-
-	const args = {};
-
-	for (let i = 0; i < func.args.length; i++)
-	{
-		const arg = func.args[i];
-
-		if (args[arg.id])
-			throw new Error(`Argument ${arg.id} redeclaration in function ${name}`);
-
-		args[arg.id] = {
-			loc: {
-				type: 'stack',
-				disp: i
-			}
-		};
-	}
-
 	const locals = {};
 
 	for (let i = 0; i < func.locals.length; i++)
 	{
 		const local = func.locals[i];
 
-		if (args[local.id])
-			throw new Error(`Local variable ${local.id} declaration over argument in function ${name}`);
-
 		if (locals[local.id])
-			throw new Error(`Local variable ${local.id} redeclaration in function ${name}`);
+			throw new Error(`Local variable ${local.id} redeclaration in function ${func.name}`);
 
 		locals[local.id] = {
 			loc: {
-				type: 'stack',
-				disp: func.args.length + 1 + i
+				type: 'm',
+				addr: `[ebp${-i || undefined}]`
 			}
 		};
 	}
 
-	const subCgState = {
-		usedRegs: [],
-		scope: Object.assign({},
-			state.globals,
-			args,
+	const scope = {
+		vars: Object.assign({},
 			locals
-		)
+		),
+		funcs: {}
 	};
 
-	const expr = expression(state, subCgState, [], body.root);
+	const expr = expression(state, scope, [], body.root, []);
 
 	return {
 		out: [
 			`${cgState.func}:`,
-			'        PUSH    ebp',
-			'        MOV     ebp, esp',
-			`        ADD     ebp, ${1 + func.args.length}`,
-			`        SUB     esp, ${func.locals.length}`,
-			...subCgState.usedRegs.map(reg => `        PUSH    ${reg}`),
 			...expr.out,
-			...subCgState.usedRegs.map(reg => `        POP     ${reg}`).reverse(),
-			'        MOV     esp, ebp',
-			'        POP     ebp'
+			expr.loc.addr === 'eax' || `        MOV     eax, ${expr.loc.addr}`
 		]
 	};
 }
 
-function expression(state, cgState, busyRegs, expr)
+function expression(state, scope, busyRegs, expr, usedRegs)
 {
-	if (expr.type === 'op')
+	const type = expr.type.split('/');
+
+	if (type[0] === 'operation')
 	{
-		const lhs = expression(state, cgState, expr.lhs);
-		const rhs = expression(state, cgState, expr.rhs);
+		const lhs = expression(state, scope, busyRegs, expr.lhs, usedRegs);
+		const rhs = expression(state, scope, busyRegs, expr.rhs, usedRegs);
 
 		const out = [...lhs.out, ...rhs.out];
 
-		if (lhs.loc.type !== 'reg' && rhs.loc.type !== 'reg')
-		{
-			var freeReg = _.difference(regs, busyRegs)[0];
+		if (lhs.loc.type === 'r') {
+			out.push(`        ${expr.mnemonics.padEnd(7)} ${lhs.loc.addr}, ${rhs.loc.addr}`);
+			return {out, loc: lhs.loc};
+		}
 
-			if(!freeReg)
-				out.push(`        PUSH    ${regs[0]}`);
+		if (rhs.loc.type === 'r' && expr.commutative) {
+			out.push(`        ${expr.mnemonics.padEnd(7)} ${rhs.loc.addr}, ${lhs.loc.addr}`);
+			return {out, loc: rhs.loc};
+		}
 
+		if (rhs.loc.type === 'r' && !expr.commutative) {
+			out.push(`        ${expr.mnemonics.padEnd(7)} ${rhs.loc.addr}, ${lhs.loc.addr}`);
+			out.push(`        ${expr.mnemonics.padEnd(7)} ${rhs.loc.addr}, ${lhs.loc.addr}`);
+			return {out, loc: rhs.loc};
+		}
+
+		
+
+		// switch (lhs.loc.type)
+		// {
+		// case 'stack':
+		// 	out.push(`        MOV     ${X}, [ebp${-lhs.loc.disp || undefined}]`);
+		// }
+
+		// switch (lhs.loc) {
 			
+		// }
 
-			if(!freeReg)
-				out.push(`        XCHG    ${regs[0]}, [esp-1]`);
-		}
+		throw new Error();
 
-		switch (lhs.loc.type)
+		// return {
+		// 	out
+		// };
+	}
+	// else if (type[0] === 'call')
+	// {
+		
+	// }	
+	else if (type[0] === 'value')
+	{
+		if (type[1] === 'id')
 		{
-		case 'stack':
-			out.push(`        MOV     ${X}, [ebp${-lhs.loc.disp || undefined}]`);
+			if (!scope.vars[expr.id])
+				throw new Error(`Undefined reference to ${expr.id}`);
+
+			return {
+				out: [],
+				loc: scope.vars[expr.id].loc
+			};
 		}
-
-		switch (lhs.loc) {
-			
+		else if (type[1] === 'literal')
+		{
+			return {
+				out: [],
+				loc: {
+					type: 'imm',
+					addr: expr.value
+				}
+			};
 		}
-
-		out.push(`        ${expr.op}`);
-
-		return {
-			out
-		};
-	}
-	else if (expr.type === 'id')
-	{
-		if (!cgState.scope[expr.id])
-			throw new Error(`Undefined reference to ${expr.id}`);
-
-		return cgState.scope[expr.id];
-	}
-	else if (expr.type === 'imm')
-	{
-		return {loc: expr};
+		else
+			throw new Error();
 	}
 	else 
 		throw new Error();
-
-	// switch (expr.loc)
-	// {
-	// 	case 'stack':
-	// 		return 
-	// }
-
-	// if (cgState.) {
-
-	// }
-
-	// return {
-	// 	loc: {type: 'stack'},
-	// 	out: [`        PUSH    ${expr.value}`]
-	// };
 }
