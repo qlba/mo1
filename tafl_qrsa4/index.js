@@ -48,7 +48,7 @@ const syntan = new Syntan(rules, init, select, postproc);
 
 const state = {};
 
-const parsed = syntan.parse(state, '+(+(a,1),+(1,a))');
+const parsed = syntan.parse(state, '+(+(a,1),+(1,1))');
 
 if (!parsed.accept)
 	process.exit(-1);
@@ -112,13 +112,17 @@ function func(state, func, body)
 		funcs: {}
 	};
 
-	const expr = expression(state, scope, regs, body.root, {});
+	const usedRegs = {};
+
+	const expr = expression(state, scope, regs, body.root, usedRegs);
 
 	return {
 		out: [
 			`${func.name}:`,
+			..._.keys(usedRegs).map(reg => `        PUSH    ${reg}`),
 			...expr.out,
-			...(expr.loc.addr === 'eax' ? [] : [`        MOV     eax, ${expr.loc.addr}`])
+			...(expr.loc.addr === 'eax' ? [] : [`        MOV     eax, ${expr.loc.addr}`]),
+			..._.keys(usedRegs).reverse().map(reg => `        POP     ${reg}`),
 		]
 	};
 }
@@ -164,6 +168,8 @@ function expression(state, scope, freeRegs, expr, usedRegs)
 		else
 		{
 			const reg = _.first(freeRegs);
+
+			usedRegs[reg] = true;
 
 			if (!reg)
 				throw new Error('Register file overload');
