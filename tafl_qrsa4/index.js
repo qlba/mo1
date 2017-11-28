@@ -104,16 +104,16 @@ function entry(state, parsed)
 
 function func(state, func, body)
 {
-	const locals = {};
+	const args = {};
 
-	for (let i = 0; i < func.locals.length; i++)
+	for (let i = 0; i < func.args.length; i++)
 	{
-		const local = func.locals[i];
+		const arg = func.args[i];
 
-		if (locals[local.id])
-			throw new Error(`Local variable ${local.id} redeclaration in function ${func.name}`);
+		if (args[arg.id])
+			throw new Error(`Ambiguous definition of argument ${arg.id} in function ${func.name}`);
 
-		locals[local.id] = {
+		args[arg.id] = {
 			loc: {
 				type: 'm',
 				addr: `[ebp${i - 2 - func.locals.length}]`
@@ -121,10 +121,28 @@ function func(state, func, body)
 		};
 	}
 
+	const locals = {};
+
+	for (let i = 0; i < func.locals.length; i++)
+	{
+		const local = func.locals[i];
+
+		if (args[local.id])
+			throw new Error(`Ambiguous definition of argument/variable ${local.id} in function ${func.name}`);
+
+		if (locals[local.id])
+			throw new Error(`Ambiguous definition of variable ${local.id} in function ${func.name}`);
+
+		locals[local.id] = {
+			loc: {
+				type: 'm',
+				addr: `[ebp${i ? `+${i}` : ''}]`
+			}
+		};
+	}
+
 	const scope = {
-		vars: Object.assign({},
-			locals
-		),
+		vars: Object.assign({}, args, locals),
 		funcs: {}
 	};
 

@@ -17,7 +17,7 @@ module.exports = class Syntan
 		const {rules, init, select, postproc} = this;
 	
 		const shop = new Shop('$', init);
-		const tape = new Tape(input + '$');
+		const tape = new Tape([...input, {type: '$'});
 		
 		const ppshop = new Shop();
 	
@@ -34,7 +34,7 @@ module.exports = class Syntan
 			state.M = M;
 			state.x = x;
 		
-			if (M === '$' && x === '$')
+			if (M === '$' && x.type === '$')
 			{
 				state.action = chalk.green('A');
 				done = accept = true;
@@ -52,26 +52,26 @@ module.exports = class Syntan
 		
 				shop.pop();
 			}
-			else if (select[M] && select[M][x])
+			else if (select[M] && select[M][x.type])
 			{
-				state.action = chalk.yellow(`X  ${rules[select[M][x]].lhs} -> ${rules[select[M][x]].rhs}`);
+				state.action = chalk.yellow(`X  ${rules[select[M][x.type]].lhs} -> ${rules[select[M][x.type]].rhs}`);
 		
-				const rhs = rules[select[M][x]].rhs;
+				const rhs = rules[select[M][x.type]].rhs;
 		
 				shop.pop();
-				shop.push(select[M][x]);
+				shop.push(select[M][x.type]);
 		
 				for (let i = rhs.length - 1; i >= 0; i--)
 					shop.push(rhs[i]);
 			}
-			else if (M === x)
+			else if (M === x.type)
 			{
 				tape.shift();
 				shop.pop();
 		
 				ppshop.push(x);
 		
-				state.action = chalk.magenta(`M  ${x}`);
+				state.action = chalk.magenta(`M  ${x.type}`);
 			}
 			else
 			{
@@ -79,7 +79,7 @@ module.exports = class Syntan
 				done = true;
 			}
 		
-			log('%4d %25s %25s  %s  %s  %s\n', round, state.shop, state.tape, state.M, state.x, state.action);
+			log('%4d %25s %25s  %s  %s  %s\n', round, state.shop, state.tape.map(x => x.type), state.M, state.x.type, state.action);
 		}
 		
 		return {
