@@ -1,3 +1,4 @@
+const regs = ['eax', 'ecx', 'edx', 'ebx', 'esi', 'edi'];
 const _ = require('lodash');
 
 const rules = {
@@ -69,7 +70,6 @@ if (!parsed.accept)
 console.log(entry(state, parsed.result).out.join('\n'));
 
 
-const regs = ['eax', 'ecx', 'edx', 'ebx', 'esi', 'edi'];
 
 
 function entry(state, parsed)
@@ -129,6 +129,7 @@ function expression(state, scope, freeRegs, expr, usedRegs)
 {
 	const type = expr.type.split('/');
 	const out = [];
+	let loc;
 
 	if (type[0] === 'operation')
 	{
@@ -141,67 +142,40 @@ function expression(state, scope, freeRegs, expr, usedRegs)
 		const pushReg = freeRegsForRhs.length < 1 && lhsReg;
 		
 		if (pushReg)
+		{
 			out.push(`        PUSH    ${pushReg}`);
+			lhs.loc = {type: 'm', addr: '[esp+1]'};
+		}
 
 		const rhsRes = expression(state, scope, freeRegsForRhs, expr.rhs, usedRegs);
 		out.push.apply(out, rhsRes.out);
 
-		const out = [...lhs.out, ...rhs.out];
-
 		if (lhs.loc.type === 'r')
 		{
 			out.push(`        ${expr.mnemonics.padEnd(7)} ${lhs.loc.addr}, ${rhs.loc.addr}`);
-			return {out, loc: lhs.loc};
+			loc = lhs.loc;
 		}
-
-		if (rhs.loc.type === 'r' && expr.commutative)
+		else if (rhs.loc.type === 'r' && expr.commutative)
 		{
 			out.push(`        ${expr.mnemonics.padEnd(7)} ${rhs.loc.addr}, ${lhs.loc.addr}`);
-			return {out, loc: rhs.loc};
+			loc = rhs.loc;
 		}
-
-		const reg = _.first(freeRegs);
-
-		if (freeRegs.count < 2)
-			; // .....
 		else
 		{
-			out
+			const reg = _.first(freeRegs);
+
+			if (!reg)
+				throw new Error('Register file overload');
+
+			out.push(`        MOV     ${reg}, ${lhs.loc.addr}`);
+			out.push(`        ${expr.mnemonics.padEnd(7)} ${lhs.loc.addr}, ${rhs.loc.addr}`);
+			loc = {type: 'r', addr: reg};
 		}
 
-		if (!reg) {
-			throw new Error('Register file overload');
-			//out.push(`        PUSH    eax`);
-			//out.push(`        MOV     [esp+1], ${rhs.loc.addr}`);
-			//out.push(`        ${expr.mnemonics.padEnd(7)} ${rhs.loc.addr}, ${lhs.loc.addr}`);
-			//out.push(`        ADD     esp, 1`);
-		}
+		if (pushReg)
+			out.push(`        ADD     esp, 1`);
 
-		if (rhs.loc.type === 'r' && !expr.commutative) {
-			out.push(`        ${expr.mnemonics.padEnd(7)} ${rhs.loc.addr}, ${lhs.loc.addr}`);
-			out.push(`        ${expr.mnemonics.padEnd(7)} ${rhs.loc.addr}, ${lhs.loc.addr}`);
-			return {out, loc: rhs.loc};
-		}
-
-		
-
-		
-
-		// switch (lhs.loc.type)
-		// {
-		// case 'stack':
-		// 	out.push(`        MOV     ${X}, [ebp${-lhs.loc.disp || undefined}]`);
-		// }
-
-		// switch (lhs.loc) {
-			
-		// }
-
-		throw new Error();
-
-		// return {
-		// 	out
-		// };
+		return {out, loc};
 	}
 	// else if (type[0] === 'call')
 	// {
