@@ -75,6 +75,7 @@ console.log(entry(state, parsed.result).out.join('\n'));
 function entry(state, parsed)
 {
 	const main = {
+		name: 'main',
 		locals: [
 			{id: 'a'},
 			{id: 'b'},
@@ -99,7 +100,7 @@ function func(state, func, body)
 		locals[local.id] = {
 			loc: {
 				type: 'm',
-				addr: `[ebp${-i || undefined}]`
+				addr: `[ebp${-i || ''}]`
 			}
 		};
 	}
@@ -115,7 +116,7 @@ function func(state, func, body)
 
 	return {
 		out: [
-			`${cgState.func}:`,
+			`${func.name}:`,
 			...expr.out,
 			...(expr.loc.addr === 'eax' ? [] : [`        MOV     eax, ${expr.loc.addr}`])
 		]
@@ -133,8 +134,8 @@ function expression(state, scope, freeRegs, expr, usedRegs)
 
 	if (type[0] === 'operation')
 	{
-		const lhsRes = expression(state, scope, freeRegs, expr.lhs, usedRegs);
-		out.push.apply(out, lhsRes.out);
+		const lhs = expression(state, scope, freeRegs, expr.lhs, usedRegs);
+		out.push.apply(out, lhs.out);
 
 		const lhsReg = lhs.loc.type === 'r' && lhs.loc.addr;
 		const freeRegsForRhs = _.without(freeRegs, lhsReg);
@@ -147,8 +148,8 @@ function expression(state, scope, freeRegs, expr, usedRegs)
 			lhs.loc = {type: 'm', addr: '[esp+1]'};
 		}
 
-		const rhsRes = expression(state, scope, freeRegsForRhs, expr.rhs, usedRegs);
-		out.push.apply(out, rhsRes.out);
+		const rhs = expression(state, scope, freeRegsForRhs, expr.rhs, usedRegs);
+		out.push.apply(out, rhs.out);
 
 		if (lhs.loc.type === 'r')
 		{
@@ -168,7 +169,7 @@ function expression(state, scope, freeRegs, expr, usedRegs)
 				throw new Error('Register file overload');
 
 			out.push(`        MOV     ${reg}, ${lhs.loc.addr}`);
-			out.push(`        ${expr.mnemonics.padEnd(7)} ${lhs.loc.addr}, ${rhs.loc.addr}`);
+			out.push(`        ${expr.mnemonics.padEnd(7)} ${reg}, ${rhs.loc.addr}`);
 			loc = {type: 'r', addr: reg};
 		}
 
