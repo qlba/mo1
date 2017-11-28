@@ -48,7 +48,7 @@ const syntan = new Syntan(rules, init, select, postproc);
 
 const state = {};
 
-const parsed = syntan.parse(state, '+(+(a,a),+(a,a))');
+const parsed = syntan.parse(state, '+(+(a,1),+(1,a))');
 
 if (!parsed.accept)
 	process.exit(-1);
