@@ -4,9 +4,11 @@ const _ = require('lodash');
 const rules = {
 	1: {lhs: 'S', rhs: 'E'},
 	2: {lhs: 'E', rhs: '+(E,E)'},
-	3: {lhs: 'E', rhs: '*(E,E)'},
-	4: {lhs: 'E', rhs: 'a'},
-	5: {lhs: 'E', rhs: '1'}
+	3: {lhs: 'E', rhs: '-(E,E)'},
+	4: {lhs: 'E', rhs: '*(E,E)'},
+	5: {lhs: 'E', rhs: '/(E,E)'},
+	6: {lhs: 'E', rhs: 'a'},
+	7: {lhs: 'E', rhs: '1'}
 };
 
 const init = 'S';
@@ -14,15 +16,19 @@ const init = 'S';
 const select = {
 	'S': {
 		'+': 1,
+		'-': 1,
 		'*': 1,
+		'/': 1,
 		'a': 1,
 		'1': 1
 	},
 	'E': {
 		'+': 2,
-		'*': 3,
-		'a': 4,
-		'1': 5
+		'-': 3,
+		'*': 4,
+		'/': 5,
+		'a': 6,
+		'1': 7
 	}
 };
 
@@ -37,15 +43,23 @@ const postproc = {
 	},
 	3: (state, [,,E1,,E2]) =>
 	{
+		return {type: 'operation/sub', mnemonics: 'SUB', shiftable: true, lhs: E1, rhs: E2};
+	},
+	4: (state, [,,E1,,E2]) =>
+	{
 		return {type: 'operation/mul', mnemonics: 'MUL', commutative: true, lhs: E1, rhs: E2};
 	},
-	4: (state, [a]) =>
+	5: (state, [,,E1,,E2]) =>
 	{
-		return {type: 'value/id', id: a};
+		return {type: 'operation/div', mnemonics: 'DIV', lhs: E1, rhs: E2};
 	},
-	5: (state, [v]) =>
+	6: (state, [a]) =>
 	{
-		return {type: 'value/literal', value: v};
+		return {type: 'value/id', id: a.value};
+	},
+	7: (state, [v]) =>
+	{
+		return {type: 'value/literal', value: v.value};
 	}
 };
 
@@ -59,7 +73,24 @@ const syntan = new Syntan(rules, init, select, postproc);
 
 const state = {};
 
-const parsed = syntan.parse(state, '+(+(a,1),+(*(a,a),1))');
+const tokens = [
+	{type: '-'},
+	{type: '('},
+	{type: 'a', value: 'b'},
+	{type: ','},
+	{type: '+'},
+	{type: '('},
+	{type: '1', value: 2},
+	{type: ','},
+	{type: '1', value: 2},
+	{type: ')'},
+	{type: ')'},
+	{type: '$'}
+];
+
+const parsed = syntan.parse(state, tokens);
+
+console.dir(parsed, {depth: null});
 
 if (!parsed.accept)
 	process.exit(-1);
@@ -156,10 +187,10 @@ function func(state, func, body)
 			'        PUSH    ebp',
 			'        MOV     ebp, esp',
 			`        SUB     esp, ${func.locals.length}`,
-			..._.keys(usedRegs).map(reg => `        PUSH    ${reg}`),
+			..._(usedRegs).keys().without('eax').map(reg => `        PUSH    ${reg}`).value(),
 			...expr.out,
 			...(expr.loc.addr === 'eax' ? [] : [`        MOV     eax, ${expr.loc.addr}`]),
-			..._.keys(usedRegs).reverse().map(reg => `        POP     ${reg}`),
+			..._(usedRegs).keys().without('eax').reverse().map(reg => `        POP     ${reg}`).value(),
 			'        MOV     esp, ebp',
 			'        POP     ebp',
 			'        RET'
@@ -195,8 +226,18 @@ function expression(state, scope, freeRegs, expr, usedRegs)
 		const rhs = expression(state, scope, freeRegsForRhs, expr.rhs, usedRegs);
 		out.push.apply(out, rhs.out);
 
-		if (lhs.loc.type === 'r')
+
+		else if (lhs.loc.type === 'r' || rhs.loc.type === 'r' && !expr.commutative)
 		{
+			if (!expr.shiftable) {
+				out.push(`        PUSH    ${rhs.loc.addr}`);
+				out.push(`        MOV     ${rhs.loc.addr}, ${lhs.loc.addr}`);
+
+				rhs.loc.addr = {
+					type: 'm', addr: '[esp+1]'
+				};
+			}
+
 			out.push(`        ${expr.mnemonics.padEnd(7)} ${lhs.loc.addr}, ${rhs.loc.addr}`);
 			loc = lhs.loc;
 		}
@@ -207,7 +248,9 @@ function expression(state, scope, freeRegs, expr, usedRegs)
 		}
 		else
 		{
-			const reg = _.first(freeRegs);
+			const reg = _(freeRegsForRhs).without(rhs.loc.type === 'r' && rhs.loc.addr).first();
+			
+			console.dir(freeRegsForRhs);
 
 			usedRegs[reg] = true;
 

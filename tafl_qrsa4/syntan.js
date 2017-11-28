@@ -17,7 +17,7 @@ module.exports = class Syntan
 		const {rules, init, select, postproc} = this;
 	
 		const shop = new Shop('$', init);
-		const tape = new Tape([...input, {type: '$'});
+		const tape = new Tape(input);
 		
 		const ppshop = new Shop();
 	
@@ -79,7 +79,7 @@ module.exports = class Syntan
 				done = true;
 			}
 		
-			log('%4d %25s %25s  %s  %s  %s\n', round, state.shop, state.tape.map(x => x.type), state.M, state.x.type, state.action);
+			log('%4d %25s %25s  %s  %s  %s\n', round, state.shop, state.tape.map(x => x.type).join(''), state.M, state.x.type, state.action);
 		}
 		
 		return {
