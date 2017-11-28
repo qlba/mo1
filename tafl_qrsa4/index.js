@@ -1,3 +1,5 @@
+const _ = require('lodash');
+
 const rules = {
 	1: {lhs: 'S', rhs: 'E'},
 	2: {lhs: 'E', rhs: '+(E,E)'},
@@ -67,6 +69,9 @@ if (!parsed.accept)
 console.log(entry(state, parsed.result).out.join('\n'));
 
 
+const regs = ['eax', 'ecx', 'edx', 'ebx', 'esi', 'edi'];
+
+
 function entry(state, parsed)
 {
 	const main = {
@@ -106,36 +111,70 @@ function func(state, func, body)
 		funcs: {}
 	};
 
-	const expr = expression(state, scope, [], body.root, []);
+	const expr = expression(state, scope, regs, body.root, {});
 
 	return {
 		out: [
 			`${cgState.func}:`,
 			...expr.out,
-			expr.loc.addr === 'eax' || `        MOV     eax, ${expr.loc.addr}`
+			...(expr.loc.addr === 'eax' ? [] : [`        MOV     eax, ${expr.loc.addr}`])
 		]
 	};
 }
 
-function expression(state, scope, busyRegs, expr, usedRegs)
+// expressionRoot?
+// 6expression?
+
+function expression(state, scope, freeRegs, expr, usedRegs)
 {
 	const type = expr.type.split('/');
+	const out = [];
 
 	if (type[0] === 'operation')
 	{
-		const lhs = expression(state, scope, busyRegs, expr.lhs, usedRegs);
-		const rhs = expression(state, scope, busyRegs, expr.rhs, usedRegs);
+		const lhsRes = expression(state, scope, freeRegs, expr.lhs, usedRegs);
+		out.push.apply(out, lhsRes.out);
+
+		const lhsReg = lhs.loc.type === 'r' && lhs.loc.addr;
+		const freeRegsForRhs = _.without(freeRegs, lhsReg);
+
+		const pushReg = freeRegsForRhs.length < 1 && lhsReg;
+		
+		if (pushReg)
+			out.push(`        PUSH    ${pushReg}`);
+
+		const rhsRes = expression(state, scope, freeRegsForRhs, expr.rhs, usedRegs);
+		out.push.apply(out, rhsRes.out);
 
 		const out = [...lhs.out, ...rhs.out];
 
-		if (lhs.loc.type === 'r') {
+		if (lhs.loc.type === 'r')
+		{
 			out.push(`        ${expr.mnemonics.padEnd(7)} ${lhs.loc.addr}, ${rhs.loc.addr}`);
 			return {out, loc: lhs.loc};
 		}
 
-		if (rhs.loc.type === 'r' && expr.commutative) {
+		if (rhs.loc.type === 'r' && expr.commutative)
+		{
 			out.push(`        ${expr.mnemonics.padEnd(7)} ${rhs.loc.addr}, ${lhs.loc.addr}`);
 			return {out, loc: rhs.loc};
+		}
+
+		const reg = _.first(freeRegs);
+
+		if (freeRegs.count < 2)
+			; // .....
+		else
+		{
+			out
+		}
+
+		if (!reg) {
+			throw new Error('Register file overload');
+			//out.push(`        PUSH    eax`);
+			//out.push(`        MOV     [esp+1], ${rhs.loc.addr}`);
+			//out.push(`        ${expr.mnemonics.padEnd(7)} ${rhs.loc.addr}, ${lhs.loc.addr}`);
+			//out.push(`        ADD     esp, 1`);
 		}
 
 		if (rhs.loc.type === 'r' && !expr.commutative) {
@@ -143,6 +182,8 @@ function expression(state, scope, busyRegs, expr, usedRegs)
 			out.push(`        ${expr.mnemonics.padEnd(7)} ${rhs.loc.addr}, ${lhs.loc.addr}`);
 			return {out, loc: rhs.loc};
 		}
+
+		
 
 		
 
