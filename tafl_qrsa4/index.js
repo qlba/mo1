@@ -4,8 +4,9 @@ const _ = require('lodash');
 const rules = {
 	1: {lhs: 'S', rhs: 'E'},
 	2: {lhs: 'E', rhs: '+(E,E)'},
-	3: {lhs: 'E', rhs: 'a'},
-	4: {lhs: 'E', rhs: '1'}
+	3: {lhs: 'E', rhs: '*(E,E)'},
+	4: {lhs: 'E', rhs: 'a'},
+	5: {lhs: 'E', rhs: '1'}
 };
 
 const init = 'S';
@@ -13,13 +14,15 @@ const init = 'S';
 const select = {
 	'S': {
 		'+': 1,
+		'*': 1,
 		'a': 1,
 		'1': 1
 	},
 	'E': {
 		'+': 2,
-		'a': 3,
-		'1': 4
+		'*': 3,
+		'a': 4,
+		'1': 5
 	}
 };
 
@@ -32,18 +35,23 @@ const postproc = {
 	{
 		return {type: 'operation/add', mnemonics: 'ADD', commutative: true, lhs: E1, rhs: E2};
 	},
-	3: (state, [a]) =>
+	3: (state, [,,E1,,E2]) =>
+	{
+		return {type: 'operation/mul', mnemonics: 'MUL', commutative: true, lhs: E1, rhs: E2};
+	},
+	4: (state, [a]) =>
 	{
 		return {type: 'value/id', id: a};
 	},
-	4: (state, [v]) =>
+	5: (state, [v]) =>
 	{
 		return {type: 'value/literal', value: v};
 	}
 };
 
 
-const regs = ['eax', 'ecx', 'edx', 'ebx', 'esi', 'edi'];
+const regs = ['eax', 'ecx'];
+//const regs = ['eax', 'ecx', 'edx', 'ebx', 'esi', 'edi'];
 
 
 const Syntan = require('./syntan');
@@ -51,7 +59,7 @@ const syntan = new Syntan(rules, init, select, postproc);
 
 const state = {};
 
-const parsed = syntan.parse(state, '+(+(a,1),+(1,1))');
+const parsed = syntan.parse(state, '+(+(a,1),+(*(a,a),1))');
 
 if (!parsed.accept)
 	process.exit(-1);
@@ -124,12 +132,14 @@ function func(state, func, body)
 			`${func.name}:`,
 			'        PUSH    ebp',
 			'        MOV     ebp, esp',
+			`        SUB     esp, ${func.locals.length}`,
 			..._.keys(usedRegs).map(reg => `        PUSH    ${reg}`),
 			...expr.out,
 			...(expr.loc.addr === 'eax' ? [] : [`        MOV     eax, ${expr.loc.addr}`]),
 			..._.keys(usedRegs).reverse().map(reg => `        POP     ${reg}`),
 			'        MOV     esp, ebp',
-			'        POP     ebp'
+			'        POP     ebp',
+			'        RET'
 		]
 	};
 }
@@ -182,7 +192,7 @@ function expression(state, scope, freeRegs, expr, usedRegs)
 				throw new Error('Register file overload');
 
 			out.push(`        MOV     ${reg}, ${lhs.loc.addr}`);
-			out.push(`        ${expr.mnemonics.padEnd(7)} ${reg}, ${rhs.loc.addr}`);
+			out.push(`        ${expr.mnemonics.padEnd(7)} ${reg}, ${_.isEqual(lhs.loc, rhs.loc) ? reg : rhs.loc.addr}`);
 			loc = {type: 'r', addr: reg};
 		}
 
