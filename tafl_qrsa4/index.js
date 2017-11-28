@@ -1,5 +1,5 @@
-const regs = ['eax', 'ecx', 'edx', 'ebx', 'esi', 'edi'];
 const _ = require('lodash');
+
 
 const rules = {
 	1: {lhs: 'S', rhs: 'E'},
@@ -41,6 +41,9 @@ const postproc = {
 		return {type: 'value/literal', value: v};
 	}
 };
+
+
+const regs = ['eax', 'ecx', 'edx', 'ebx', 'esi', 'edi'];
 
 
 const Syntan = require('./syntan');
@@ -100,7 +103,7 @@ function func(state, func, body)
 		locals[local.id] = {
 			loc: {
 				type: 'm',
-				addr: `[ebp${-i || ''}]`
+				addr: `[ebp${i - 2 - func.locals.length}]`
 			}
 		};
 	}
@@ -119,10 +122,14 @@ function func(state, func, body)
 	return {
 		out: [
 			`${func.name}:`,
+			'        PUSH    ebp',
+			'        MOV     ebp, esp',
 			..._.keys(usedRegs).map(reg => `        PUSH    ${reg}`),
 			...expr.out,
 			...(expr.loc.addr === 'eax' ? [] : [`        MOV     eax, ${expr.loc.addr}`]),
 			..._.keys(usedRegs).reverse().map(reg => `        POP     ${reg}`),
+			'        MOV     esp, ebp',
+			'        POP     ebp'
 		]
 	};
 }
