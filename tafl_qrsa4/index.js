@@ -87,10 +87,15 @@ function entry(state, parsed)
 {
 	const main = {
 		name: 'main',
-		locals: [
+		args: [
 			{id: 'a'},
 			{id: 'b'},
 			{id: 'c'}
+		],
+		locals: [
+			{id: 'd'},
+			{id: 'e'},
+			{id: 'f'}
 		]
 	};
 
