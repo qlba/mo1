@@ -14,4 +14,4 @@ for(var i = 0; i <= n; i++)
 		epsilon = e;
 }
 
-console.log(epsilon);
+process.stdout.write(`${epsilon}\n`);

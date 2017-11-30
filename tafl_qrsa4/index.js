@@ -64,7 +64,7 @@ const postproc = {
 };
 
 
-const regs = ['eax', 'ecx'];
+const regs = ['eax']; // , 'ecx'
 //const regs = ['eax', 'ecx', 'edx', 'ebx', 'esi', 'edi'];
 
 
@@ -74,9 +74,16 @@ const syntan = new Syntan(rules, init, select, postproc);
 const state = {};
 
 const tokens = [
-	{type: '-'},
+	{type: '/'},
+	{type: '('},
+
+	{type: '/'},
 	{type: '('},
 	{type: 'a', value: 'b'},
+	{type: ','},
+	{type: 'a', value: 'b'},
+	{type: ')'},
+	
 	{type: ','},
 	{type: '+'},
 	{type: '('},
@@ -205,7 +212,7 @@ function expression(state, scope, freeRegs, expr, usedRegs)
 {
 	const type = expr.type.split('/');
 	const out = [];
-	let loc;
+	let loc, pushes = 0;
 
 	if (type[0] === 'operation')
 	{
@@ -215,29 +222,21 @@ function expression(state, scope, freeRegs, expr, usedRegs)
 		const lhsReg = lhs.loc.type === 'r' && lhs.loc.addr;
 		const freeRegsForRhs = _.without(freeRegs, lhsReg);
 
-		const pushReg = freeRegsForRhs.length < 1 && lhsReg;
+		const pushLhs = freeRegsForRhs.length < 1 && lhsReg;
 		
-		if (pushReg)
+		if (pushLhs)
 		{
-			out.push(`        PUSH    ${pushReg}`);
 			lhs.loc = {type: 'm', addr: '[esp+1]'};
+			out.push(`        PUSH    ${pushLhs}`);
+
+			pushes++;
 		}
 
-		const rhs = expression(state, scope, freeRegsForRhs, expr.rhs, usedRegs);
+		const rhs = expression(state, scope, pushLhs ? freeRegs : freeRegsForRhs, expr.rhs, usedRegs);
 		out.push.apply(out, rhs.out);
 
-
-		else if (lhs.loc.type === 'r' || rhs.loc.type === 'r' && !expr.commutative)
+		if (lhs.loc.type === 'r')
 		{
-			if (!expr.shiftable) {
-				out.push(`        PUSH    ${rhs.loc.addr}`);
-				out.push(`        MOV     ${rhs.loc.addr}, ${lhs.loc.addr}`);
-
-				rhs.loc.addr = {
-					type: 'm', addr: '[esp+1]'
-				};
-			}
-
 			out.push(`        ${expr.mnemonics.padEnd(7)} ${lhs.loc.addr}, ${rhs.loc.addr}`);
 			loc = lhs.loc;
 		}
@@ -246,31 +245,43 @@ function expression(state, scope, freeRegs, expr, usedRegs)
 			out.push(`        ${expr.mnemonics.padEnd(7)} ${rhs.loc.addr}, ${lhs.loc.addr}`);
 			loc = rhs.loc;
 		}
+		else if (rhs.loc.type === 'r' && expr.shiftable)
+		{
+			out.push(`        ${expr.mnemonics.padEnd(7)} ${lhs.loc.addr}, ${rhs.loc.addr}`);
+			loc = lhs.loc;
+		}
+		else if (rhs.loc.type === 'r')
+		{
+			out.push(`        PUSH    ${rhs.loc.addr}`);
+			pushes++;
+
+			if (pushLhs)
+				lhs.loc = {type: 'm', addr: '[esp+2]'};
+
+			out.push(`        MOV     ${rhs.loc.addr}, ${lhs.loc.addr}`);
+			out.push(`        ${expr.mnemonics.padEnd(7)} ${rhs.loc.addr}, [esp+1]`);
+
+			loc = rhs.loc;
+		}
 		else
 		{
-			const reg = _(freeRegsForRhs).without(rhs.loc.type === 'r' && rhs.loc.addr).first();
-			
-			console.dir(freeRegsForRhs);
-
-			usedRegs[reg] = true;
+			const reg = _.first(pushLhs ? freeRegs : freeRegsForRhs);
 
 			if (!reg)
 				throw new Error('Register file overload');
+
+			usedRegs[reg] = true;
 
 			out.push(`        MOV     ${reg}, ${lhs.loc.addr}`);
 			out.push(`        ${expr.mnemonics.padEnd(7)} ${reg}, ${_.isEqual(lhs.loc, rhs.loc) ? reg : rhs.loc.addr}`);
 			loc = {type: 'r', addr: reg};
 		}
 
-		if (pushReg)
-			out.push(`        ADD     esp, 1`);
+		if (pushes)
+			out.push(`        ADD     esp, ${pushes}`);
 
 		return {out, loc};
 	}
-	// else if (type[0] === 'call')
-	// {
-		
-	// }	
 	else if (type[0] === 'value')
 	{
 		if (type[1] === 'id')
@@ -296,6 +307,10 @@ function expression(state, scope, freeRegs, expr, usedRegs)
 		else
 			throw new Error();
 	}
+	// else if (type[0] === 'call')
+	// {
+
+	// }
 	else 
 		throw new Error();
 }
