@@ -1,9 +1,10 @@
+const pEachSeries = require('p-each-series');
 const _ = require('lodash');
 
 const STACK_SIZE = 1024;
 
 
-function Assembler(instructions)
+async function Assembler(asm)
 {
 	this.eax = undefined;
 	this.ebx = undefined;
@@ -23,7 +24,20 @@ function Assembler(instructions)
 
 	this.eip = 0;
 
-	
+	asm = _.compact(asm.split('\n'));
+
+	await pEachSeries(asm, async (line) =>
+	{
+		const [mnemonics, ...args] = _.compact(line.split(/[ ,]/));
+
+		this[mnemonics](args);
+
+
+
+
+
+		await new Promise((resolve) => setTimeout(resolve, 1000));
+	});
 }
 
 Assembler.prototype.ADD = function()
@@ -107,8 +121,6 @@ Assembler.prototype.RET = function()
 
 	this.eip = this.esp--;
 };
-
-
 
 
 Assembler.prototype.getParam = function(addr)

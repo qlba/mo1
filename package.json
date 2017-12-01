@@ -18,6 +18,7 @@
     "less-loader": "^4.0.5",
     "lodash": "^4.17.4",
     "mathjs": "^3.16.3",
+    "p-each-series": "^1.0.0",
     "popper.js": "^1.12.6",
     "printf": "^0.2.5",
     "react": "^16.1.0",
