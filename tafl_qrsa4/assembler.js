@@ -3,7 +3,7 @@ const _ = require('lodash');
 const STACK_SIZE = 1024;
 
 
-function Assembler()
+function Assembler(instructions)
 {
 	this.eax = undefined;
 	this.ebx = undefined;
@@ -22,6 +22,8 @@ function Assembler()
 	};
 
 	this.eip = 0;
+
+	
 }
 
 Assembler.prototype.ADD = function()
@@ -78,7 +80,9 @@ Assembler.prototype.PUSH = function()
 {
 	const [lhs] = _.map(arguments, this.getParam.bind(this));
 
-	this.esp++;
+	if (++this.esp > STACK_SIZE)
+		throw new Error('Segmentation fault (stack overflow)');
+
 	this.setMem('esp', -1, lhs.get());
 };
 
@@ -88,6 +92,9 @@ Assembler.prototype.POP = function()
 
 	if (lhs.loc === 'imm')
 		throw new Error('Invalid operand set');
+
+	if (this.esp === 0)
+		throw new Error('Segmentation fault (stack underflow)');
 
 	lhs.set(this.getMem('esp', -1));
 	this.esp--;
@@ -143,6 +150,9 @@ Assembler.prototype.setFlags = function(res)
 
 Assembler.prototype.setReg = function(reg, value)
 {
+	if (!Number.isFinite(value))
+		throw new Error(`${value} is not an assembler value`);
+
 	return this[reg] = value;
 };
 
@@ -153,6 +163,9 @@ Assembler.prototype.getReg = function(reg)
 
 Assembler.prototype.setMem = function(reg, off, value)
 {
+	if (!Number.isFinite(value))
+		throw new Error(`${value} is not an assembler value`);
+
 	const addr = (reg && this[reg] || 0) + (off || 0);
 
 	if (addr < 0)
@@ -183,8 +196,11 @@ Assembler.prototype.getMem = function(reg, off)
 	return this.stack[this[reg] + off];
 };
 
-Assembler.prototype.setImm = function()
+Assembler.prototype.setImm = function(value)
 {
+	if (!Number.isFinite(value))
+		throw new Error(`${value} is not an assembler value`);
+
 	throw new Error('Cannot set immediate value');
 };
 
