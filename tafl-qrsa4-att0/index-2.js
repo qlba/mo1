@@ -18,10 +18,16 @@ const m = {
 	stack: new Array(1024)
 };
 
-// fucntion execute() {
-// }
+let mPrev = _.cloneDeep(m);
 
-function printState()
+function opCycle() {
+	// exec(op);
+
+	printState(getDiff(mPrev, m));
+	mPrev = _.cloneDeep(m);
+}
+
+function printState(diff)
 {
 	const result = new Array(10).fill('   ');
 
@@ -37,45 +43,67 @@ function printState()
 
 	result[3] = chalk.yellow(result[3]);
 
+	const stack = _.union(diff.stack, _.range(m.esp + 1, m.esp + 11))
+		.slice(0, 10).sort((x, y) => x - y);
+
 	for (let i = 0; i < 10; i++)
-		result[i] += m.esp + i + 1 < m.stack.length ?
-			`${m.esp + i + 1}: `.padStart(6) + `${m.stack[m.esp + i + 1]}`.padStart(24) :
+		result[i] += stack[i] < m.stack.length ?
+			maybeRed(_.includes(diff.stack, stack[i]))(
+				`${stack[i] - m.ebp > 0 ? '+' : ''}${m.ebp !== stack[i] ? stack[i] - m.ebp : 'ebp'}:   `.padStart(9) +
+				`${stack[i]}: `.padStart(6) +
+				`${m.stack[stack[i]]}`.padStart(24)
+			) :
 			' '.repeat(30);
 
 	for (let i = 0; i < 10; i++)
 		result[i] += ' '.repeat(10);
 
-	result[0] += 'eip: ' + `${m.eip}`.padStart(24);
-	result[1] += 'esp: ' + `${m.esp}`.padStart(24);
-	result[2] += 'ebp: ' + `${m.ebp}`.padStart(24);
-	result[3] += ' '.repeat(29);
-	result[4] += chalk.red('eax: ' + `${m.eax}`.padStart(24));
-	result[5] += 'ebx: ' + `${m.ebx}`.padStart(24);
-	result[6] += 'ecx: ' + `${m.ecx}`.padStart(24);
-	result[7] += 'edx: ' + `${m.edx}`.padStart(24);
-	result[8] += 'esi: ' + `${m.esi}`.padStart(24);
-	result[9] += 'edi: ' + `${m.edi}`.padStart(24);
+	result[0] += maybeRed(diff.eip)('eip: ' + `${m.eip}`.padStart(24));
+	result[1] += maybeRed(diff.esp)('esp: ' + `${m.esp}`.padStart(24));
+	result[2] += maybeRed(diff.ebp)('ebp: ' + `${m.ebp}`.padStart(24));
+	result[3] += maybeRed(diff.eflags.sf || diff.eflags.zf)('eflags: ') +
+		' '.repeat(18) +
+		maybeRed(diff.eflags.zf)(`${m.eflags.zf ? 'z' : ' '}`) + ' ' +
+		maybeRed(diff.eflags.sf)(`${m.eflags.sf ? 's' : ' '}`);
+	result[4] += maybeRed(diff.eax)('eax: ' + `${m.eax}`.padStart(24));
+	result[5] += maybeRed(diff.ebx)('ebx: ' + `${m.ebx}`.padStart(24));
+	result[6] += maybeRed(diff.ecx)('ecx: ' + `${m.ecx}`.padStart(24));
+	result[7] += maybeRed(diff.edx)('edx: ' + `${m.edx}`.padStart(24));
+	result[8] += maybeRed(diff.esi)('esi: ' + `${m.esi}`.padStart(24));
+	result[9] += maybeRed(diff.edi)('edi: ' + `${m.edi}`.padStart(24));
 
 	process.stdout.write(`\n${result.join('\n')}\n`);
+
+	function maybeRed(condition)
+	{
+		return function(str)
+		{
+			return condition ? chalk.red(str) : str;
+		};
+	}
+}
+
+function getDiff(m1, m2)
+{
+	const diff = _.chain(m1)
+		.keys()
+		.without('eflags', 'stack', 'code')
+		.reject(key => m1[key] === m2[key] && !(_.isNaN(m1[key]) && _.isNaN(m2[key])))
+		.map(key => [key, true])
+		.fromPairs()
+		.value();
+
+	diff.stack = _.reject(
+		_.range(0, Math.max(m1.stack.length, m2.stack.length)),
+		index => m1.stack[index] === m2.stack[index] && !(_.isNaN(m1.stack[index]) && _.isNaN(m2.stack[index]))
+	);
+
+	diff.eflags = {
+		zf: m1.eflags.zf !== m2.eflags.zf,
+		sf: m1.eflags.sf !== m2.eflags.sf
+	};
+
+	return diff;
 }
 
 
-m.esp = 1018;
-m.stack[1023] = 4;
-m.stack[1022] = 3;
-m.stack[1021] = -132235.236547324652e-110;
-m.stack[1020] = 1;
-m.stack[1019] = 0;
-m.eax = 230;
-m.code = [
-	{mnemonics: 'PUSH', args: ['ebp']},
-	{mnemonics: 'MOV', args: ['ebp', 'esp']},
-	{mnemonics: 'SUB', args: ['esp', 16]},
-	{mnemonics: 'ADD', args: ['eax', 200]},
-	{mnemonics: 'MOV', args: ['[ebp-8]', 'eax']},
-	{mnemonics: 'XCHG', args: ['edx', 'eax']},
-	{mnemonics: 'MUL', args: ['eax', 'edx']}
-];
-m.eip = 2;
-
-printState();
