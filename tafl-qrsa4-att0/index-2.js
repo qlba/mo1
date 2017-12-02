@@ -332,10 +332,16 @@ function printState(prevState, eip)
 // `);
 
 run(`
-        NOP
-        CALL    3
-        INT     0
-        MOV     eax, 5
-        SUB     eax, 5
-        RET
+		NOP
+		CALL	4
+		SUB		eax, 5
+		INT		0
+		MOV		eax, 5
+		MUL		eax, eax
+		MOD		eax, 10
+		ADD		eax, 7
+		MOV		ecx, eax
+		MOV		eax, 60
+		DIV		eax, ecx
+		RET
 `);
