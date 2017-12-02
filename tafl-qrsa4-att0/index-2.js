@@ -17,7 +17,8 @@ const m = {
 	eflags: {
 		zf: undefined,
 		sf: undefined,
-		xf: false
+		xf: false,
+		jf: undefined
 	},
 	stack: new Array(STACK_SIZE)
 };
@@ -30,7 +31,7 @@ async function run(asm) {
 		(a => ({mnemonics: a[0], args: a.slice(1)}))(_.compact(line.split(/[ ,]/)))
 	);
 
-	while (!m.eflags.xf)
+	for (let round = 0; !m.eflags.xf; round++)
 		try
 		{
 			const {mnemonics, args} = m.code[m.eip];
@@ -42,12 +43,15 @@ async function run(asm) {
 				...checkLocs(commands[mnemonics].locs)(args.map(getParam))
 			);
 
-			process.stdout.write('\n ------ ------ \n');
+			process.stdout.write(`\n ------ ------ ${round.toString().padStart(5)}\n`);
 
 			printState(mPrev);
 			mPrev = _.cloneDeep(m);
 			
-			m.eip++;
+			if (!m.eflags.jf)
+				m.eip++;
+			else
+				m.eflags.jf = false;
 			
 			process.stdout.write('Press <RETURN> to continue ...\n');
 
@@ -55,26 +59,32 @@ async function run(asm) {
 		}
 		catch(e)
 		{
+			console.error(e);
 			setImmediate(() => {throw e;});
+			throw e;
 		}
 
 	process.exit();
 }
 
 const commands = {
-	INT: {
-		locs: [[/imm/]],
-		func: (id) => interruption(id.get())
-	},
 	NOP: {
 		locs: [[]],
 		func: () => 0
+	},
+	INT: {
+		locs: [[/imm/]],
+		func: (id) => interruption(id.get())
 	},
 	MOV: {
 		locs: [
 			[/reg/, /$/], [/mem/, /reg/]
 		],
 		func: (dst, src) => dst.set(src.get())
+	},
+	CALL: {
+		locs: [[/imm/]],
+		func: (id) => interruption(id.get())
 	}
 };
 
@@ -205,10 +215,9 @@ function printState(prevState)
 	result[1] += maybeRed(diff.esp)('esp: ' + `${m.esp}`.padStart(24));
 	result[2] += maybeRed(diff.ebp)('ebp: ' + `${m.ebp}`.padStart(24));
 	result[3] += maybeRed(_.values(diff.eflags).some(_.identity))('eflags: ') +
-		' '.repeat(16) +
-		maybeRed(diff.eflags.zf)(`${m.eflags.zf ? 'z' : ' '}`) + ' ' +
-		maybeRed(diff.eflags.sf)(`${m.eflags.sf ? 's' : ' '}`) + ' ' +
-		maybeRed(diff.eflags.xf)(`${m.eflags.xf ? 'x' : ' '}`);
+		' '.repeat(14) + _.keys(m.eflags).map(flag =>
+			maybeRed(diff.eflags[flag])(`${m.eflags[flag] ? flag[0] : '_'}`)
+		).join(' ');
 	result[4] += maybeRed(diff.eax)('eax: ' + `${m.eax}`.padStart(24));
 	result[5] += maybeRed(diff.ebx)('ebx: ' + `${m.ebx}`.padStart(24));
 	result[6] += maybeRed(diff.ecx)('ecx: ' + `${m.ecx}`.padStart(24));
@@ -239,6 +248,7 @@ function printState(prevState)
 			zf: m1.eflags.zf !== m2.eflags.zf,
 			sf: m1.eflags.sf !== m2.eflags.sf,
 			xf: m1.eflags.xf !== m2.eflags.xf,
+			jf: m1.eflags.jf !== m2.eflags.jf
 		};
 	
 		return diff;
