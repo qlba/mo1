@@ -1,4 +1,3 @@
-const pEachSeries = require('p-each-series');
 const chalk = require('chalk');
 const _ = require('lodash');
 
@@ -17,7 +16,8 @@ const m = {
 	eip: 0,
 	eflags: {
 		zf: undefined,
-		sf: undefined
+		sf: undefined,
+		xf: false
 	},
 	stack: new Array(STACK_SIZE)
 };
@@ -26,22 +26,35 @@ let mPrev = _.cloneDeep(m);
 
 
 async function run(asm) {
-	await pEachSeries(_.compact(asm.split('\n')), async line =>
-	{
-		const [mnemonics, ...args] = _.compact(line.split(/[ ,]/));
+	m.code = _.compact(asm.split('\n')).map(line =>
+		(a => ({mnemonics: a[0], args: a.slice(1)}))(_.compact(line.split(/[ ,]/)))
+	);
 
-		if (!commands[mnemonics])
-			throw new Error(`Unknown command: ${mnemonics}`);
+	for (let done = false; !done;)
+		try
+		{
+			const {mnemonics, args} = m.code[m.eip];
 
-		commands[mnemonics].func(
-			...checkLocs(commands[mnemonics].locs)(args.map(getParam))
-		);
+			if (!commands[mnemonics])
+				throw new Error(`Unknown command: ${mnemonics}`);
 
-		printState(mPrev);
-		mPrev = _.cloneDeep(m);
+			commands[mnemonics].func(
+				...checkLocs(commands[mnemonics].locs)(args.map(getParam))
+			);
 
-		await new Promise((resolve) => setTimeout(resolve, 1000));
-	});
+			m.eip++;
+
+			printState(mPrev);
+			mPrev = _.cloneDeep(m);
+
+			await new Promise((resolve) => setTimeout(resolve, 1000));
+		}
+		catch(e)
+		{
+			setImmediate(() => {throw e;});
+		}
+
+	process.exit();
 }
 
 const commands = {
@@ -224,5 +237,6 @@ function printState(prevState)
 // ---------
 
 run(`
+        NOP
         MOV     eax, 3
 `);
