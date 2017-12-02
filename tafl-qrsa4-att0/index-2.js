@@ -4,6 +4,7 @@ const _ = require('lodash');
 
 const STACK_SIZE = 1024;
 
+
 const m = {
 	eax: undefined,
 	ebx: undefined,
@@ -29,7 +30,12 @@ async function run(asm) {
 	{
 		const [mnemonics, ...args] = _.compact(line.split(/[ ,]/));
 
-		commands[mnemonics](...args.map(getParam));
+		if (!commands[mnemonics])
+			throw new Error(`Unknown command: ${mnemonics}`);
+
+		commands[mnemonics].func(
+			...checkLocs(commands[mnemonics].locs)(args.map(getParam))
+		);
 
 		printState(mPrev);
 		mPrev = _.cloneDeep(m);
@@ -39,11 +45,18 @@ async function run(asm) {
 }
 
 const commands = {
-	MOV: function([dst, src])
-	{
-
+	NOP: {
+		locs: [[]],
+		func: () => 0
+	},
+	MOV: {
+		locs: [
+			[/reg/, /$/], [/mem/, /reg/]
+		],
+		func: (dst, src) => dst.set(src.get())
 	}
 };
+
 
 function getParam(addr)
 {
@@ -57,9 +70,20 @@ function getParam(addr)
 	else if(mem.test(addr))
 		return prop.mem(mem.exec(addr)[1], Number.parseInt(mem.exec(addr)[2]));
 	else
-		throw new Error('Invalid addressation type');
+		throw new Error(`Invalid addressation type: ${addr}`);
 }
 
+function checkLocs(allowed)
+{
+	return function(args) {
+		if (!allowed.some(
+			config => args.every((arg, index) => config[index].test(arg.loc))
+		))
+			throw new Error('Invalid command configuration');
+
+		return args;
+	};
+}
 
 const prop = {
 	reg: reg => ({
@@ -195,3 +219,10 @@ function printState(prevState)
 		};
 	}
 }
+
+
+// ---------
+
+run(`
+        MOV     eax, 3
+`);
