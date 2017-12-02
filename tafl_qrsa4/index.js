@@ -137,7 +137,14 @@ function entry(state, parsed)
 		]
 	};
 
-	return func(state, main, parsed);
+	return {
+		out: [
+			'        NOP',
+			'        CALL    3',
+			'        INT     0',
+			...func(state, main, parsed)
+		]
+	};
 }
 
 function func(state, func, body)

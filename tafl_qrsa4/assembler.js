@@ -119,7 +119,7 @@ Assembler.prototype.RET = function()
 	if (this.esp < 1)
 		throw new Error('Segmentation fault (stack underflow)');
 
-	this.eip = this.esp--;
+	this.eip = this.esp++;
 };
 
 

@@ -1,5 +1,8 @@
+const pEachSeries = require('p-each-series');
 const chalk = require('chalk');
 const _ = require('lodash');
+
+const STACK_SIZE = 1024;
 
 const m = {
 	eax: undefined,
@@ -8,29 +11,114 @@ const m = {
 	edx: undefined,
 	esi: undefined,
 	edi: undefined,
-	esp: undefined,
-	ebp: undefined,
-	eip: undefined,
+	esp: STACK_SIZE - 1,
+	ebp: STACK_SIZE - 1,
+	eip: 0,
 	eflags: {
 		zf: undefined,
 		sf: undefined
 	},
-	stack: new Array(1024)
+	stack: new Array(STACK_SIZE)
 };
 
 let mPrev = _.cloneDeep(m);
 
-function opCycle() {
-	// exec(op);
 
-	printState(getDiff(mPrev, m));
-	mPrev = _.cloneDeep(m);
+async function run(asm) {
+	await pEachSeries(_.compact(asm.split('\n')), async line =>
+	{
+		const [mnemonics, ...args] = _.compact(line.split(/[ ,]/));
+
+		commands[mnemonics](...args.map(getParam));
+
+		printState(mPrev);
+		mPrev = _.cloneDeep(m);
+
+		await new Promise((resolve) => setTimeout(resolve, 1000));
+	});
 }
 
-function printState(diff)
+const commands = {
+	MOV: function([dst, src])
+	{
+
+	}
+};
+
+function getParam(addr)
+{
+	const reg = /^(eax|ebx|ecx|edx|esi|edi|ebp|esp)$/;
+	const mem = /^\[(eax|ebx|ecx|edx|esi|edi|ebp|esp)?([+|-]?\d+)?\]$/;
+
+	if(isFinite(addr))
+		return prop.imm(Number.parseFloat(addr));
+	else if(reg.test(addr))
+		return prop.reg(addr);
+	else if(mem.test(addr))
+		return prop.mem(mem.exec(addr)[1], Number.parseInt(mem.exec(addr)[2]));
+	else
+		throw new Error('Invalid addressation type');
+}
+
+
+const prop = {
+	reg: reg => ({
+		loc: 'reg',
+		get: ( ) => m[reg],
+		set: (x) => m[reg] = R(x)
+	}),
+	mem: (reg, offset) => ({
+		loc: 'mem',
+		get: ( ) => m.stack[M(reg, offset)],
+		set: (x) => m.stack[M(reg, offset)] = R(x)
+	}),
+	imm: imm => ({
+		loc: 'imm',
+		get: ( ) => R(imm),
+		set: (x) => {throw new Error(`Cannot assign value ${R(x)} to immediate`);}
+	})
+};
+
+function R(value)
+{
+	if (!Number.isFinite(value))
+		throw new Error(`${value} is not an assembler value`);
+
+	return value;
+}
+
+function M(reg, offset)
+{
+	const addr = (reg && R(m[reg]) || 0) + (offset || 0);
+
+	if (!Number.isInteger(addr))
+		throw new Error(`Not a memory cell: ${addr}`);
+
+	if (addr < 0)
+		throw new Error(`Segmentation fault (stack overflow at ${addr})`);
+
+	if (addr <= this.esp)
+		throw new Error(`Segmentation fault (stack pointer overflow at ${addr})`);
+
+	if (addr >= STACK_SIZE)
+		throw new Error(`Segmentation fault (stack underflow at ${addr})`);
+
+	return addr;
+}
+
+
+function setFlags(res)
+{
+	m.eflags.zf = res === 0;
+	m.eflags.sf = res < 0;
+}
+
+
+function printState(prevState)
 {
 	const result = new Array(10).fill('   ');
-
+	const diff = getDiff(prevState, m);
+	
 	for (let i = 0; i < 10; i++)
 		if (m.eip - 3 + i < 0 || m.eip - 3 + i >= m.code.length)
 			result[i] += ' '.repeat(40);
@@ -74,6 +162,31 @@ function printState(diff)
 
 	process.stdout.write(`\n${result.join('\n')}\n`);
 
+	function getDiff(m1, m2)
+	{
+		const diff = _.chain(m1)
+			.keys()
+			.without('eip', 'eflags', 'stack', 'code')
+			.reject(key => m1[key] === m2[key] && !(_.isNaN(m1[key]) && _.isNaN(m2[key])))
+			.map(key => [key, true])
+			.fromPairs()
+			.value();
+
+		diff.eip = m2.eip !== m1.eip + 1;
+	
+		diff.stack = _.reject(
+			_.range(0, Math.max(m1.stack.length, m2.stack.length)),
+			index => m1.stack[index] === m2.stack[index] && !(_.isNaN(m1.stack[index]) && _.isNaN(m2.stack[index]))
+		);
+	
+		diff.eflags = {
+			zf: m1.eflags.zf !== m2.eflags.zf,
+			sf: m1.eflags.sf !== m2.eflags.sf
+		};
+	
+		return diff;
+	}
+
 	function maybeRed(condition)
 	{
 		return function(str)
@@ -82,28 +195,3 @@ function printState(diff)
 		};
 	}
 }
-
-function getDiff(m1, m2)
-{
-	const diff = _.chain(m1)
-		.keys()
-		.without('eflags', 'stack', 'code')
-		.reject(key => m1[key] === m2[key] && !(_.isNaN(m1[key]) && _.isNaN(m2[key])))
-		.map(key => [key, true])
-		.fromPairs()
-		.value();
-
-	diff.stack = _.reject(
-		_.range(0, Math.max(m1.stack.length, m2.stack.length)),
-		index => m1.stack[index] === m2.stack[index] && !(_.isNaN(m1.stack[index]) && _.isNaN(m2.stack[index]))
-	);
-
-	diff.eflags = {
-		zf: m1.eflags.zf !== m2.eflags.zf,
-		sf: m1.eflags.sf !== m2.eflags.sf
-	};
-
-	return diff;
-}
-
-
