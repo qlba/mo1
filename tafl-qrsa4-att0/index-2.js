@@ -86,6 +86,20 @@ const commands = {
 		],
 		func: (dst, src) => dst.set(src.get())
 	},
+	PUSH: {
+		locs: [[/(reg|imm)/]],
+		func: (src) => {
+			prop.reg('esp').set(prop.reg('esp').get() - 1);
+			prop.mem('esp', +1).set(src.get());
+		}
+	},
+	POP: {
+		locs: [[/(reg|imm)/]],
+		func: (dst) => {
+			dst.set(prop.mem('esp', +1).get());
+			prop.reg('esp').set(prop.reg('esp').get() + 1);
+		}
+	},
 	CALL: {
 		locs: [[/imm/]],
 		func: (addr) => {
@@ -324,13 +338,6 @@ function printState(prevState, eip)
 
 // ---------
 
-// run(`
-//         NOP
-//         MOV     eax, 3
-//         CALL    4
-//         INT     0
-// `);
-
 run(`
 		NOP
 		CALL	4
@@ -341,7 +348,8 @@ run(`
 		MOD		eax, 10
 		ADD		eax, 7
 		MOV		ecx, eax
-		MOV		eax, 60
+		PUSH	60
+		POP		eax
 		DIV		eax, ecx
 		RET
 `);
