@@ -42,8 +42,10 @@ const EARTH_RADIUS = 6378165;
 const EARTH_GRAVITY = -9.8 * EARTH_RADIUS * EARTH_RADIUS;
 const X0 = -4610050;
 const Y0 = 4710000;
-const VX0 = 5000;
-const VY0 = 6000;
+// const VX0 = 5000;
+// const VY0 = 6000;
+const VX0 = 5522;
+const VY0 = 5522;
 
 const dx = (t, x, y, vx, vy) => vx;
 const dy = (t, x, y, vx, vy) => vy;
@@ -53,11 +55,11 @@ const dvy = (t, x, y, vx, vy) => EARTH_GRAVITY * y / Math.pow(x * x + y * y, 3 /
 
 logPosition(0, X0, Y0);
 
-for (let i = 0, init = [X0, Y0, VX0, VY0]; i < 1 * 60; i++)
+for (let i = 0, init = [X0, Y0, VX0, VY0]; i < 3 * 60; i++)
 {
-	const ys = rungecutta([dx, dy, dvx, dvy], init, _.range(0, 60, 0.01));
+	const ys = rungecutta([dx, dy, dvx, dvy], init, _.range(0, 60, 1));
 
-	logPosition(i + 1, _.last(ys)[0], _.last(ys)[1]);
+	logPosition(1 * (i + 1), _.last(ys)[0], _.last(ys)[1]);
 
 	init = _.last(ys);
 }
@@ -69,6 +71,11 @@ function logPosition(minute, XH, YH)
 		(
 			Math.round(Math.atan2(YH, XH) * 180 / Math.PI)
 		).toString().padStart(25) + '\u00B0 ' +
+
+		(
+			Math.round(Math.atan2(YH, XH - EARTH_RADIUS) * 180 / Math.PI)
+		).toString().padStart(25) + '\u00B0 ' +
+
 		(
 			Math.round((Math.sqrt(XH * XH + YH * YH) - EARTH_RADIUS) / 1000)
 		).toString().padStart(25) + ' km'
