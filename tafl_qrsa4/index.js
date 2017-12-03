@@ -116,7 +116,13 @@ if (!parsed.accept)
 // };
 
 // console.dir(parsed.accept && parsed.result, {depth: null});
-console.log(entry(state, parsed.result).out.join('\n'));
+
+const asm = entry(state, parsed.result).out.join('\n');
+
+const run = require('./assembler');
+
+console.log(asm);
+run(asm);
 
 
 
@@ -126,14 +132,14 @@ function entry(state, parsed)
 	const main = {
 		name: 'main',
 		args: [
+			// {id: 'd'},
+			// {id: 'e'},
+			// {id: 'f'}
+		],
+		locals: [
 			{id: 'a'},
 			{id: 'b'},
 			{id: 'c'}
-		],
-		locals: [
-			{id: 'd'},
-			{id: 'e'},
-			{id: 'f'}
 		]
 	};
 
@@ -142,7 +148,7 @@ function entry(state, parsed)
 			'        NOP',
 			'        CALL    3',
 			'        INT     0',
-			...func(state, main, parsed)
+			...func(state, main, parsed).out
 		]
 	};
 }
@@ -161,7 +167,7 @@ function func(state, func, body)
 		args[arg.id] = {
 			loc: {
 				type: 'm',
-				addr: `[ebp${i - 2 - func.locals.length}]`
+				addr: `[ebp+${2 + func.args.length - i}]`
 			}
 		};
 	}
@@ -181,7 +187,7 @@ function func(state, func, body)
 		locals[local.id] = {
 			loc: {
 				type: 'm',
-				addr: `[ebp${i ? `+${i}` : ''}]`
+				addr: `[ebp${-i || ''}]`
 			}
 		};
 	}
@@ -197,7 +203,7 @@ function func(state, func, body)
 
 	return {
 		out: [
-			`${func.name}:`,
+			// `${func.name}:`,
 			'        PUSH    ebp',
 			'        MOV     ebp, esp',
 			`        SUB     esp, ${func.locals.length}`,
@@ -211,9 +217,6 @@ function func(state, func, body)
 		]
 	};
 }
-
-// expressionRoot?
-// 6expression?
 
 function expression(state, scope, freeRegs, expr, usedRegs)
 {
