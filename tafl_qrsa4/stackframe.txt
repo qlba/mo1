@@ -6,3 +6,14 @@ ret & <-- ebp-argslen
 arg 2 <-- ebp-2             i
 arg 1 <-- ebp-1
 arg 0 <-- ebp-0
+
+<-- esp
+loc n-1 <-- [ebp-(n-1)]
+...
+loc 1   <-- [ebp-1]
+loc 0   <-- [ebp]
+ebp     <-- [ebp+1]
+eip     <-- [ebp+2]
+arg m-1 <-- [ebp+3]
+...
+arg 0   <-- [ebp+2+m]
