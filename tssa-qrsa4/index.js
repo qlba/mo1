@@ -45,5 +45,5 @@ for (let i = 0; i < 10; i++)
 {
 	ThetaI = MCMStep(L(ThetaI), KvInv, R, zThetaI(ThetaI), ThetaI);
 
-	console.log(ThetaI.toString());
+	console.log(`${i}: ${ThetaI}`);
 }
