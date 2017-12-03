@@ -21,6 +21,25 @@ class MathMx extends JordanMx
 		return result;
 	}
 
+	sub(rhs)
+	{
+		var A = this, B = rhs,
+			{m, n} = this;
+
+		if(A.m !== B.m || A.n !== B.n)
+			throw new Error('Subtraction of matrices of different size');
+
+		var result = new MathMx(m, n);
+
+		for(var i = 0; i < m; i++)
+			for(var j = 0; j < n; j++)
+				result.setElement(i, j,
+					A.getElement(i, j).sub(B.getElement(i, j))
+				);
+
+		return result;
+	}
+
 	mul(rhs)
 	{
 		var A = this, B = rhs,	
