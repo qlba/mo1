@@ -138,7 +138,47 @@ const commands = {
 	MOD: {
 		locs: [[/reg/, /$/]],
 		func: (dst, src) => setFlags(dst.set(dst.get() % src.get()))
-	}
+	},
+	// NEG: 
+	// ABS:
+	// SQRT:
+	// ROUND:
+	// POW:
+	// LOG:
+	// SIN:
+	// COS:
+	// TAN:
+	// CTG:
+	// ASIN:
+	// ACOS:
+	// ATAN:
+	// ACTG:
+	// SINH:
+	// COSH:
+	// TANH:
+	// CTGH:
+	// ASINH:
+	// ACOSH:
+	// ATANH:
+	// ACTGH:
+	// ...
+	// CMP:
+	// TEST:
+	// LNOT:
+	// LAND:
+	// LOR:
+	// JMP:
+	// JE:
+	// JNE:
+	// JL:
+	// JLE:
+	// JG:
+	// JGE:
+	// ...
+	// BNOT:
+	// BAND:
+	// BOR:
+
 };
 
 function interruption(id)
