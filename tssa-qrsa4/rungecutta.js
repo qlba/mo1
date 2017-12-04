@@ -39,45 +39,46 @@ const printf = require('printf');
 const _ = require('lodash');
 
 const EARTH_RADIUS = 6378165;
-const EARTH_GRAVITY = -9.8 * EARTH_RADIUS * EARTH_RADIUS;
-const X0 = -4610050;
-const Y0 = 4710000;
-// const VX0 = 5000;
-// const VY0 = 6000;
-const VX0 = 5522;
-const VY0 = 5522;
+const EARTH_GRAVITY = 9.8;
+const X0 = 6378165;
+const Y0 = 0;
+const Xk = 4710050;
+const Yk = 4610000;
+const VXk = 6000;
+const VYk = -5000;
+
+const GAMMA_MASS = - EARTH_GRAVITY * EARTH_RADIUS * EARTH_RADIUS;
 
 const dx = (t, x, y, vx, vy) => vx;
 const dy = (t, x, y, vx, vy) => vy;
-const dvx = (t, x, y, vx, vy) => EARTH_GRAVITY * x / Math.pow(x * x + y * y, 3 / 2);
-const dvy = (t, x, y, vx, vy) => EARTH_GRAVITY * y / Math.pow(x * x + y * y, 3 / 2);
+const dvx = (t, x, y, vx, vy) => GAMMA_MASS * x / Math.pow(x * x + y * y, 3 / 2);
+const dvy = (t, x, y, vx, vy) => GAMMA_MASS * y / Math.pow(x * x + y * y, 3 / 2);
 
 
-logPosition(0, X0, Y0);
+let lastPosition = [Xk, Yk, VXk, VYk], second = 0;
 
-for (let i = 0, init = [X0, Y0, VX0, VY0]; i < 3 * 60; i++)
+logPosition(0, lastPosition, [X0, Y0], EARTH_RADIUS);
+
+
+for (let i = 0, init = [Xk, Yk, VXk, VYk]; i < 30 * 60 / 10; i++)
+	logPosition(
+		10 * (i + 1),
+		lastPosition = _.last(rungecutta([dx, dy, dvx, dvy], lastPosition, _.range(0, 10, 0.1))),
+		[X0, Y0],
+		EARTH_RADIUS
+	);
+
+function logPosition(second, [Xk, Yk, VXk, VYk], [X0, Y0], EARTH_RADIUS)
 {
-	const ys = rungecutta([dx, dy, dvx, dvy], init, _.range(0, 60, 1));
+	const TIME = printf('%2d:%02d', _.floor(second / 60), second % 60);
+	const EARTH_ALTITUDE = Math.round((Math.sqrt(Xk * Xk + Yk * Yk) - EARTH_RADIUS) / 1000).toString();
+	const EARTH_AZIMUTH = (Math.round(Math.atan2(Yk, Xk) * 180 / Math.PI)).toString()
+	const TARGET_ANGLE = (Math.round(Math.atan2(Yk - Y0, Xk - X0) * 180 / Math.PI)).toString()
 
-	logPosition(1 * (i + 1), _.last(ys)[0], _.last(ys)[1]);
-
-	init = _.last(ys);
-}
-
-function logPosition(minute, XH, YH)
-{
 	console.log(
-		printf('%2d:%02d', _.floor(minute / 60), minute % 60).padStart(6) + ' ' +
-		(
-			Math.round(Math.atan2(YH, XH) * 180 / Math.PI)
-		).toString().padStart(25) + '\u00B0 ' +
-
-		(
-			Math.round(Math.atan2(YH, XH - EARTH_RADIUS) * 180 / Math.PI)
-		).toString().padStart(25) + '\u00B0 ' +
-
-		(
-			Math.round((Math.sqrt(XH * XH + YH * YH) - EARTH_RADIUS) / 1000)
-		).toString().padStart(25) + ' km'
+		TIME.padStart(6) + ' ' +
+		EARTH_ALTITUDE.padStart(25) + ' km' +
+		EARTH_AZIMUTH.padStart(15) + '\u00B0 ' +
+		TARGET_ANGLE.padStart(25) + '\u00B0 '
 	);
 }
