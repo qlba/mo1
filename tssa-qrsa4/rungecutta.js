@@ -57,28 +57,35 @@ const dvy = (t, x, y, vx, vy) => GAMMA_MASS * y / Math.pow(x * x + y * y, 3 / 2)
 
 let lastPosition = [Xk, Yk, VXk, VYk], second = 0;
 
-logPosition(0, lastPosition, [X0, Y0], EARTH_RADIUS);
 
+const PERIOD = 7;
 
-for (let i = 0, init = [Xk, Yk, VXk, VYk]; i < 30 * 60 / 10; i++)
-	logPosition(
-		10 * (i + 1),
-		lastPosition = _.last(rungecutta([dx, dy, dvx, dvy], lastPosition, _.range(0, 10, 0.1))),
-		[X0, Y0],
-		EARTH_RADIUS
-	);
-
-function logPosition(second, [Xk, Yk, VXk, VYk], [X0, Y0], EARTH_RADIUS)
+for(;;)
 {
-	const TIME = printf('%2d:%02d', _.floor(second / 60), second % 60);
-	const EARTH_ALTITUDE = Math.round((Math.sqrt(Xk * Xk + Yk * Yk) - EARTH_RADIUS) / 1000).toString();
-	const EARTH_AZIMUTH = (Math.round(Math.atan2(Yk, Xk) * 180 / Math.PI)).toString()
-	const TARGET_ANGLE = (Math.round(Math.atan2(Yk - Y0, Xk - X0) * 180 / Math.PI)).toString()
+	lastPosition = _.last(rungecutta([dx, dy, dvx, dvy], lastPosition, _.range(0, PERIOD, 0.1)));
 
-	console.log(
-		TIME.padStart(6) + ' ' +
-		EARTH_ALTITUDE.padStart(25) + ' km' +
-		EARTH_AZIMUTH.padStart(15) + '\u00B0 ' +
-		TARGET_ANGLE.padStart(25) + '\u00B0 '
-	);
+	const angle = (Math.round(Math.atan2(lastPosition[1] - Y0, lastPosition[0] - X0) * 180 / Math.PI));
+
+	if (angle < -60)
+		break;
+	else if (angle < 60)
+	{
+		const [Xk, Yk, VXk, VYk] = lastPosition;
+
+		const earthAltitude = Math.round((Math.sqrt(Xk * Xk + Yk * Yk) - EARTH_RADIUS) / 1000);
+		const earthAngle = (Math.round(Math.atan2(Yk, Xk) * 180 / Math.PI))
+		const targetAngle = (Math.round(Math.atan2(Yk - Y0, Xk - X0) * 180 / Math.PI))
+
+		logPosition(PERIOD * ++second, earthAltitude, earthAngle, targetAngle);
+	}
+}
+
+function logPosition(second, earthAltitude, earthAngle, targetAngle)
+{
+	process.stdout.write(printf('%2d:%02d %25s km %25s\u00B0 %25s\u00B0\n',
+		_.floor(second / 60), second % 60,
+		earthAltitude,
+		earthAngle,
+		targetAngle
+	));
 }
