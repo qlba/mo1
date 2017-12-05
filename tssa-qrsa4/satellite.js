@@ -62,12 +62,17 @@ function commitFlight(ts, satelliteCoord)
 	return rungecutta(fs, satelliteCoord, _.range(0, ts[0] + 1, 1));
 }
 
-function getModelVector({period, passband, xk0, yk0, vxk0, vyk0, x0, y0})
+function getModelVector(ts, satelliteCoord, targetCoord)
 {
-	for(;;)
-	{
+	const data = [];
 
-	}
+	data.push({t: ts[0], z: radialSpeed(satelliteCoord, targetCoord)});
+
+	for(let i = 1; i < satelliteCoord; i++)
+		data.push({
+			t: ts[i],
+			z: radialSpeed(satelliteCoord = rungecutta(fs, satelliteCoord, _.range(ts[i - 1], ts[i] + 1, 1)), targetCoord)
+		});
 }
 
 
