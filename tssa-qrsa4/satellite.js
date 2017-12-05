@@ -57,12 +57,13 @@ function getPristineModel({period, passband, xk0, yk0, vxk0, vyk0, x0, y0})
 	}
 }
 
-function commitFlight(ts, {xk0, yk0, vxk0, vyk0})
-
-function getModelVector([X0, Y0])
+function commitFlight(ts, satelliteCoord)
 {
-	
+	return rungecutta(fs, satelliteCoord, _.range(0, ts[0] + 1, 1));
+}
 
+function getModelVector({period, passband, xk0, yk0, vxk0, vyk0, x0, y0})
+{
 	for(;;)
 	{
 

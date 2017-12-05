@@ -3,7 +3,7 @@ module.exports = function(fs, y0s, xs)
 	const n = xs.length;
 	const m = fs.length;
 	
-	const ys = new Array(n).fill(0).map(() => new Array(m));
+	const ys = new Array(m);
 
 	y0s.forEach((y0, j) => ys[0][j] = y0);
 
@@ -14,19 +14,19 @@ module.exports = function(fs, y0s, xs)
 		const h = xs[i] - xs[i - 1];
 
 		for (let j = 0; j < m; j++)
-			ks[j][0] = fs[j](xs[i - 1], ...ys[i - 1]);
+			ks[j][0] = fs[j](xs[i - 1], ...ys);
 
 		for (let j = 0; j < m; j++)
-			ks[j][1] = fs[j](xs[i - 1] + h / 2, ...ys[i - 1].map((y, j) => y + ks[j][0] * h / 2));
+			ks[j][1] = fs[j](xs[i - 1] + h / 2, ...ys.map((y, j) => y + ks[j][0] * h / 2));
 
 		for (let j = 0; j < m; j++)
-			ks[j][2] = fs[j](xs[i - 1] + h / 2, ...ys[i - 1].map((y, j) => y + ks[j][1] * h / 2));
+			ks[j][2] = fs[j](xs[i - 1] + h / 2, ...ys.map((y, j) => y + ks[j][1] * h / 2));
 
 		for (let j = 0; j < m; j++)
-			ks[j][3] = fs[j](xs[i], ...ys[i - 1].map((y, j) => y + ks[j][2] * h));
+			ks[j][3] = fs[j](xs[i], ...ys.map((y, j) => y + ks[j][2] * h));
 
 		for (let j = 0; j < m; j++)
-			ys[i][j] = ys[i - 1][j] +
+			ys[j] = ys[j] +
 				h * (ks[j][0] + 2 * ks[j][1] + 2 * ks[j][2] + ks[j][3]) / 6;
 	}
 

@@ -20,19 +20,8 @@ function unwrap(mx)
 	return array;
 }
 
-// function MCM()
-// {
 
-// }
 
-function MCMStep(L, KvInv, R, zThetaI, ThetaI)
-{
-	const LKvInv = L.mul(KvInv);
-
-	return ThetaI.add(
-		LKvInv.mul(L.transpose()).invert().mul(LKvInv).mul(R.sub(zThetaI))
-	);
-}
 
 
 const R = new MathMx(1, 1);
