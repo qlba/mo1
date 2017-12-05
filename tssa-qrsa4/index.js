@@ -1,6 +1,25 @@
 const {MathMx} = require('../mx/math_mx');
 const {Double} = require('../double');
 
+function wrap(data)
+{
+	return new MathMx(data.length, data[0].length).fill((_, i, j) => new Double(data[i][j]));
+}
+
+function unwrap(mx)
+{
+	var array = new Array(mx.n).fill(0);
+
+	array = array.map(() => new Array(mx.m));
+	
+	mx.fill((x, i, j) => {
+		array[i][j] = x.a;
+		return x;
+	});
+
+	return array;
+}
+
 // function MCM()
 // {
 
