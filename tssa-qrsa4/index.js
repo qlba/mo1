@@ -92,7 +92,12 @@ process.stdout.write(printf('%4s %25f %25f\n',
 
 process.stdout.write('\n');
 
-process.stdout.write(resultError.toString());
+process.stdout.write(printf('%4s %25f\n',
+	'S',
+	Math.sqrt(resultError.getElement(0, 0).a + resultError.getElement(1, 1).a)
+));
+
+// process.stdout.write(resultError.toString());
 
 
 function L(ThetaI)
