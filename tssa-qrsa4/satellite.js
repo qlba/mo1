@@ -42,9 +42,9 @@ function inBand([xk, yk], [x0, y0], passband)
 }
 
 
-function getGaugingPositions({period, passband, xk0, yk0, vxk0, vyk0, x0, y0})
+function getGaugingPositions({period, passband, satelliteCoord, targetCoord})
 {
-	let satelliteCoord = [xk0, yk0, vxk0, vyk0], targetCoord = [x0, y0], t = 0, data = [];
+	let t = 0, data = [];
 
 	for (;; t += period)
 	{
@@ -63,7 +63,7 @@ function getModelVector(gaugingPositions, targetCoord)
 }
 
 
-module.exports = function()
+module.exports = {getGaugingPositions, getModelVector};
 
 
 // module.exports = class
