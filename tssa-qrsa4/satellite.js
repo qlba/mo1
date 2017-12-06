@@ -22,7 +22,7 @@ function radialSpeed([xk, yk, vxk, vyk], [x0, y0])
 	Xn /= Ln;
 	Yn /= Ln;
 
-	const radialSpeed = vxk * Xn + vyk * Yn;
+	return vxk * Xn + vyk * Yn;
 }
 
 function inBand([xk, yk], [x0, y0], passband)
@@ -36,17 +36,19 @@ function inBand([xk, yk], [x0, y0], passband)
 
 function getGaugingPositions({period, passband, satelliteCoord, targetCoord})
 {
-	let t = 0, data = [];
+	let t = 0, positions = [];
 
 	for (;; t += period)
 	{
 		if (inBand(satelliteCoord, targetCoord, passband))
-			data.push({satelliteCoord, meta: {t}});
-		else if (data.length)
+			positions.push({satelliteCoord, meta: {t}});
+		else if (positions.length)
 			break;
 
 		satelliteCoord = rungecutta(fs, satelliteCoord, _.range(0, period + 1, 1));
 	}
+
+	return positions;
 }
 
 function getModelVector(gaugingPositions, targetCoord)

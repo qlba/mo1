@@ -5,7 +5,7 @@ module.exports = function(fs, y0s, xs)
 	
 	const ys = new Array(m);
 
-	y0s.forEach((y0, j) => ys[0][j] = y0);
+	y0s.forEach((y0, j) => ys[j] = y0);
 
 	const ks = new Array(m).fill(0).map(() => new Array(4));
 
