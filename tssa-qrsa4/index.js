@@ -105,8 +105,6 @@ process.stdout.write(printf('%4s %25d\n',
 	EQUIP_COST + N * GAUGE_COST
 ));
 
-// process.stdout.write(resultError.toString());
-
 
 function L(ThetaI)
 {
