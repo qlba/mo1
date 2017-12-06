@@ -8,7 +8,7 @@ const gauss = require('./gauss');
 
 const PERIOD = 10;
 const PASSBAND = 60;
-const SIGMA = 0.1;
+const SIGMA = 0.05;
 const Xk0 = 4710050;
 const Yk0 = 4610000;
 const VXk0 = 6000;
@@ -28,7 +28,7 @@ const pareto = {};
 
 try
 {
-	for (let PERIOD = 10; PERIOD <= 400; PERIOD += 0.01)
+	for (let PERIOD = 0.8; PERIOD >= 0.1; PERIOD -= 0.1)
 	{
 		const gaugPos = getGaugingPositions({
 			period: PERIOD,
