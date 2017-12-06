@@ -13,29 +13,8 @@ const VYk0 = -5000;
 const X0 = 6378165;
 const Y0 = 1000;
 
-// const X0_initial_approx = 1 * X0;
-// const Y0_initial_approx = 1;
 const DELTA = 100;
 
-
-// function wrap(data)
-// {
-// 	return new MathMx(data.length, data[0].length).fill((_, i, j) => new Double(data[i][j]));
-// }
-
-// function unwrap(mx)
-// {
-// 	var array = new Array(mx.n).fill(0);
-
-// 	array = array.map(() => new Array(mx.m));
-	
-// 	mx.fill((x, i, j) => {
-// 		array[i][j] = x.a;
-// 		return x;
-// 	});
-
-// 	return array;
-// }
 
 const {getGaugingPositions, getModelVector} = require('./satellite');
 
@@ -51,20 +30,8 @@ const modelVector = getModelVector(gaugPos, [X0, Y0]);
 const X0_initial_approx = (_.first(gaugPos).satelliteCoord[0] + _.last(gaugPos).satelliteCoord[0]) / 2;
 const Y0_initial_approx = (_.first(gaugPos).satelliteCoord[1] + _.last(gaugPos).satelliteCoord[1]) / 2;
 
-
 const N = modelVector.length;
 const K = 2;
-
-
-// const printf = require('printf');
-
-// for (let i = 0; i < gaugPos.length; i++)
-// 	process.stdout.write(printf('\t%2d:%02d %25d m/s\n',
-// 		Math.floor(gaugPos[i].meta.t / 60),
-// 		Math.floor(gaugPos[i].meta.t % 60),
-// 		Math.floor(modelVector[i])
-// 	));
-
 
 const R = new MathMx(N, 1);
 for (let i = 0; i < N; i++)
@@ -79,13 +46,13 @@ let ThetaI = new MathMx(K, 1);
 ThetaI.setElement(0, 0, new Double(X0_initial_approx));
 ThetaI.setElement(1, 0, new Double(Y0_initial_approx));
 
-for (let i = 0; i < 10; i++) // Stopping criterion: 10 rounds
-{
-	// console.log(`${i}: ${L(ThetaI)}`);
+console.log(`${0}: ${ThetaI.data}`);
 
+for (let i = 0; i < 10; i++)
+{
 	ThetaI = MCMStep(L(ThetaI), KvInv, R, zThetaI(ThetaI), ThetaI);
 
-	console.log(`${i}: ${ThetaI}`);
+	console.log(`${i + 1}: ${ThetaI.data}`);
 }
 
 function L(ThetaI)
