@@ -10,8 +10,9 @@ const Xk0 = 4710050;
 const Yk0 = 4610000;
 const VXk0 = 6000;
 const VYk0 = -5000;
-const X0 = 6378165;
-const Y0 = 1000;
+const X0 = 4510043.7;
+const Y0 = -4510043.7;
+const EPSILON = 1;
 
 const DELTA = 100;
 
@@ -46,13 +47,23 @@ let ThetaI = new MathMx(K, 1);
 ThetaI.setElement(0, 0, new Double(X0_initial_approx));
 ThetaI.setElement(1, 0, new Double(Y0_initial_approx));
 
-console.log(`${0}: ${ThetaI.data}`);
+const printf = require('printf');
+
+console.log(printf('%4d %25f %25f', 0, ThetaI.getElement(0, 0), ThetaI.getElement(1, 0)));
 
 for (let i = 0; i < 10; i++)
 {
-	ThetaI = MCMStep(L(ThetaI), KvInv, R, zThetaI(ThetaI), ThetaI);
+	const nextThetaI = MCMStep(L(ThetaI), KvInv, R, zThetaI(ThetaI), ThetaI);
+	
+	const dx = nextThetaI.data[0][0] - ThetaI.data[0][0];
+	const dy = nextThetaI.data[1][0] - ThetaI.data[1][0];
+	const shift = Math.sqrt(dx * dx + dy * dy);
 
-	console.log(`${i + 1}: ${ThetaI.data}`);
+	ThetaI = nextThetaI;
+	console.log(printf('%4d %25f %25f %25f', i + 1, ThetaI.getElement(0, 0), ThetaI.getElement(1, 0), shift));
+
+	if (shift < EPSILON)
+		break;
 }
 
 function L(ThetaI)
