@@ -60,10 +60,8 @@ let lastPosition = [Xk, Yk, VXk, VYk], second = 0;
 
 const PERIOD = 7;
 
-for(;;)
+for(;; second += PERIOD)
 {
-	lastPosition = _.last(rungecutta([dx, dy, dvx, dvy], lastPosition, _.range(0, PERIOD, 0.1)));
-
 	const angle = (Math.round(Math.atan2(lastPosition[1] - Y0, lastPosition[0] - X0) * 180 / Math.PI));
 
 	if (angle < -60)
@@ -76,8 +74,10 @@ for(;;)
 		const earthAngle = (Math.round(Math.atan2(Yk, Xk) * 180 / Math.PI))
 		const targetAngle = (Math.round(Math.atan2(Yk - Y0, Xk - X0) * 180 / Math.PI))
 
-		logPosition(PERIOD * ++second, earthAltitude, earthAngle, targetAngle);
+		logPosition(second, earthAltitude, earthAngle, targetAngle);
 	}
+
+	lastPosition = _.last(rungecutta([dx, dy, dvx, dvy], lastPosition, _.range(0, PERIOD + 1, 1)));
 }
 
 function logPosition(second, earthAltitude, earthAngle, targetAngle)
