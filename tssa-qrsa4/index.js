@@ -47,7 +47,7 @@ const modelVector = getModelVector(gaugPos, [X0, Y0]);
 
 
 const N = modelVector.length;
-const M = 2;
+const K = 2;
 
 
 // const printf = require('printf');
@@ -68,11 +68,11 @@ const KvInv = new MathMx(N, N);
 for (let i = 0; i < N; i++)
 	KvInv.setElement(i, i, new Double(1));
 
-let ThetaI = new MathMx(2, 1);
+let ThetaI = new MathMx(K, 1);
 ThetaI.setElement(0, 0, new Double(X0_initial_approx));
 ThetaI.setElement(1, 0, new Double(Y0_initial_approx));
 
-for (let i = 0; i < 10; i++) // Stopping criterion: 10 iterations
+for (let i = 0; i < 10; i++) // Stopping criterion: 10 rounds
 {
 	ThetaI = MCMStep(L(ThetaI), KvInv, R, zThetaI(ThetaI), ThetaI);
 
@@ -81,8 +81,24 @@ for (let i = 0; i < 10; i++) // Stopping criterion: 10 iterations
 
 function L(ThetaI)
 {
-	const L = new MathMx(1, 1);
-	L.setElement(0, 0, ThetaI.getElement(0, 0).mul(new Double(2)));
+	const L = new MathMx(K, N);
+
+	const thetas = new Array(K);
+
+	for (let j = 0; j < K; j++)
+		thetas[j] = ThetaI.getElement(j, 0).a;
+
+	for (let j = 0; j < K; j++)
+	{
+		const thetas_fwd = thetas.slice();
+		const thetas_bwd = thetas.slice();
+
+		const z_fwd = getModelVector(gaugPos, thetas);
+		const z_bwd = getModelVector(gaugPos, thetas);
+
+		L.setElement(0, 0, new Double(/*?*/));
+		
+	}
 
 	return L;
 }
