@@ -2,22 +2,24 @@ const _ = require('lodash');
 const {MathMx} = require('../mx/math_mx');
 const {Double} = require('../double');
 
+const {getGaugingPositions, getModelVector} = require('./satellite');
 const MCMStep = require('./mcmstep');
+const gauss = require('./gauss');
 
 const PERIOD = 7;
 const PASSBAND = 60;
+const SIGMA = 0.1;
 const Xk0 = 4710050;
 const Yk0 = 4610000;
 const VXk0 = 6000;
 const VYk0 = -5000;
 const X0 = 4510043.7;
 const Y0 = -4510043.7;
+
 const EPSILON = 1;
 
-const DELTA = 100;
+const DELTA = 1;
 
-
-const {getGaugingPositions, getModelVector} = require('./satellite');
 
 const gaugPos = getGaugingPositions({
 	period: PERIOD,
@@ -27,6 +29,9 @@ const gaugPos = getGaugingPositions({
 });
 
 const modelVector = getModelVector(gaugPos, [X0, Y0]);
+
+for (let i = 0; i < modelVector.length; i++)
+	modelVector[i] += gauss(12, 0, SIGMA);
 
 const X0_initial_approx = (_.first(gaugPos).satelliteCoord[0] + _.last(gaugPos).satelliteCoord[0]) / 2;
 const Y0_initial_approx = (_.first(gaugPos).satelliteCoord[1] + _.last(gaugPos).satelliteCoord[1]) / 2;
@@ -41,7 +46,7 @@ for (let i = 0; i < N; i++)
 const KvInv = new MathMx(N, N);
 KvInv.fill(() => new Double(0));
 for (let i = 0; i < N; i++)
-	KvInv.setElement(i, i, new Double(1));
+	KvInv.setElement(i, i, new Double(SIGMA));
 
 let ThetaI = new MathMx(K, 1);
 ThetaI.setElement(0, 0, new Double(X0_initial_approx));
@@ -51,20 +56,31 @@ const printf = require('printf');
 
 console.log(printf('%4d %25f %25f', 0, ThetaI.getElement(0, 0), ThetaI.getElement(1, 0)));
 
+let resultError;
+
 for (let i = 0; i < 10; i++)
 {
-	const nextThetaI = MCMStep(L(ThetaI), KvInv, R, zThetaI(ThetaI), ThetaI);
+	const MCMResult = MCMStep(L(ThetaI), KvInv, R, zThetaI(ThetaI), ThetaI);
+	const nextTheta = MCMResult.ThetaI;
 	
-	const dx = nextThetaI.data[0][0] - ThetaI.data[0][0];
-	const dy = nextThetaI.data[1][0] - ThetaI.data[1][0];
+	const dx = nextTheta.data[0][0] - ThetaI.data[0][0];
+	const dy = nextTheta.data[1][0] - ThetaI.data[1][0];
 	const shift = Math.sqrt(dx * dx + dy * dy);
 
-	ThetaI = nextThetaI;
+	ThetaI = nextTheta;
 	console.log(printf('%4d %25f %25f %25f', i + 1, ThetaI.getElement(0, 0), ThetaI.getElement(1, 0), shift));
 
-	if (shift < EPSILON)
+	if (shift < EPSILON) {
+		resultError = MCMResult.TError;
 		break;
+	}
 }
+
+console.log(printf('%4s %25f %25f', 'E',
+	Math.abs(ThetaI.getElement(0, 0) - X0),
+	Math.abs(ThetaI.getElement(1, 0) - Y0)
+));
+console.log(resultError.toString());
 
 function L(ThetaI)
 {
