@@ -22,34 +22,34 @@ const fs = [
 ];
 
 
-function inbound([Xk, Yk], [X0, Y0], passband)
+function radialSpeed([xk, yk, vxk, vyk], [x0, y0])
 {
-	const targetToSatellite = Math.atan2(Yk - Y0, Xk - X0);
-	const earthToTarget = Math.atan2(Y0, X0);
-
-	return Math.abs(targetToSatellite - earthToTarget) < Math.PI * passband / 180;
-}
-
-function radialSpeed([Xk, Yk, VXk, VYk], [X0, Y0])
-{
-	let Xn = X0 - Xk;
-	let Yn = Y0 - Yk;
+	let Xn = x0 - xk;
+	let Yn = y0 - yk;
 	let Ln = Math.sqrt(Xn * Xn + Yn * Yn);
 	Xn /= Ln;
 	Yn /= Ln;
 
-	const radialSpeed = VXk * Xn + VYk * Yn;
+	const radialSpeed = vxk * Xn + vyk * Yn;
+}
+
+function inBand([xk, yk], [x0, y0], passband)
+{
+	const targetToSatellite = Math.atan2(yk - y0, xk - x0);
+	const earthToTarget = Math.atan2(y0, x0);
+
+	return Math.abs(targetToSatellite - earthToTarget) < Math.PI * passband / 180;
 }
 
 
-function getPristineModel({period, passband, xk0, yk0, vxk0, vyk0, x0, y0})
+function getGaugingPositions({period, passband, xk0, yk0, vxk0, vyk0, x0, y0})
 {
-	let satelliteCoord = [xk0, yk0, vxk0, vyk0], targetCoord = [x0, y0], now = 0, data = [];
+	let satelliteCoord = [xk0, yk0, vxk0, vyk0], targetCoord = [x0, y0], t = 0, data = [];
 
-	for (;; now += period)
+	for (;; t += period)
 	{
-		if (inbound(satelliteCoord, targetCoord, passband))
-			data.push({t: now, z: radialSpeed(satelliteCoord, targetCoord)});
+		if (inBand(satelliteCoord, targetCoord, passband))
+			data.push({satelliteCoord, meta: {t}});
 		else if (data.length)
 			break;
 
@@ -57,22 +57,9 @@ function getPristineModel({period, passband, xk0, yk0, vxk0, vyk0, x0, y0})
 	}
 }
 
-function commitFlight(ts, satelliteCoord)
+function getModelVector(gaugingPositions, targetCoord)
 {
-	return rungecutta(fs, satelliteCoord, _.range(0, ts[0] + 1, 1));
-}
-
-function getModelVector(ts, satelliteCoord, targetCoord)
-{
-	const data = [];
-
-	data.push({t: ts[0], z: radialSpeed(satelliteCoord, targetCoord)});
-
-	for(let i = 1; i < satelliteCoord; i++)
-		data.push({
-			t: ts[i],
-			z: radialSpeed(satelliteCoord = rungecutta(fs, satelliteCoord, _.range(ts[i - 1], ts[i] + 1, 1)), targetCoord)
-		});
+	return gaugingPositions.map(({satelliteCoord}) => radialSpeed(satelliteCoord, targetCoord));
 }
 
 
