@@ -36,6 +36,8 @@ function inBand([xk, yk], [x0, y0], passband)
 
 function getGaugingPositions({period, passband, satelliteCoord, targetCoord})
 {
+	const integrationSteps = [..._.range(0, period, 1), period];
+
 	let t = 0, positions = [];
 
 	for (;; t += period)
@@ -45,7 +47,7 @@ function getGaugingPositions({period, passband, satelliteCoord, targetCoord})
 		else if (positions.length)
 			break;
 
-		satelliteCoord = rungecutta(fs, satelliteCoord, _.range(0, period + 1, 1));
+		satelliteCoord = rungecutta(fs, satelliteCoord, integrationSteps);
 	}
 
 	return positions;
