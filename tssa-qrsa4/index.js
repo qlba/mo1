@@ -1,6 +1,16 @@
 const {MathMx} = require('../mx/math_mx');
 const {Double} = require('../double');
 
+const PERIOD = 10;
+const PASSBAND = 60;
+const Xk0 = 4710050;
+const Yk0 = 4610000;
+const VXk0 = 6000;
+const VYk0 = -5000;
+const X0 = 6378165;
+const Y0 = 0;
+
+
 function wrap(data)
 {
 	return new MathMx(data.length, data[0].length).fill((_, i, j) => new Double(data[i][j]));

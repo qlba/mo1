@@ -1,16 +1,8 @@
 const _ = require('lodash');
 const rungecutta = require('./rungecutta');
 
-// const PERIOD = 10;
-// const PASSBAND = 60;
 const EARTH_RADIUS = 6378165;
 const EARTH_GRAVITY = 9.8;
-// const Xk0 = 4710050;
-// const Yk0 = 4610000;
-// const VXk0 = 6000;
-// const VYk0 = -5000;
-// const X0 = 6378165;
-// const Y0 = 0;
 
 const GAMMA_MASS = - EARTH_GRAVITY * EARTH_RADIUS * EARTH_RADIUS;
 
