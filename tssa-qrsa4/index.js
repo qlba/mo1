@@ -1,5 +1,8 @@
+const _ = require('lodash');
 const {MathMx} = require('../mx/math_mx');
 const {Double} = require('../double');
+
+const MCMStep = require('./mcmstep');
 
 const PERIOD = 7;
 const PASSBAND = 60;
@@ -8,11 +11,11 @@ const Yk0 = 4610000;
 const VXk0 = 6000;
 const VYk0 = -5000;
 const X0 = 6378165;
-const Y0 = 0;
+const Y0 = 1000;
 
-const X0_initial_approx = 0;
-const Y0_initial_approx = 0;
-const DELTA = 1;
+// const X0_initial_approx = 1 * X0;
+// const Y0_initial_approx = 1;
+const DELTA = 100;
 
 
 // function wrap(data)
@@ -45,6 +48,9 @@ const gaugPos = getGaugingPositions({
 
 const modelVector = getModelVector(gaugPos, [X0, Y0]);
 
+const X0_initial_approx = (_.first(gaugPos).satelliteCoord[0] + _.last(gaugPos).satelliteCoord[0]) / 2;
+const Y0_initial_approx = (_.first(gaugPos).satelliteCoord[1] + _.last(gaugPos).satelliteCoord[1]) / 2;
+
 
 const N = modelVector.length;
 const K = 2;
@@ -65,6 +71,7 @@ for (let i = 0; i < N; i++)
 	R.setElement(i, 0, new Double(modelVector[i]));
 
 const KvInv = new MathMx(N, N);
+KvInv.fill(() => new Double(0));
 for (let i = 0; i < N; i++)
 	KvInv.setElement(i, i, new Double(1));
 
@@ -74,6 +81,8 @@ ThetaI.setElement(1, 0, new Double(Y0_initial_approx));
 
 for (let i = 0; i < 10; i++) // Stopping criterion: 10 rounds
 {
+	// console.log(`${i}: ${L(ThetaI)}`);
+
 	ThetaI = MCMStep(L(ThetaI), KvInv, R, zThetaI(ThetaI), ThetaI);
 
 	console.log(`${i}: ${ThetaI}`);
@@ -91,13 +100,15 @@ function L(ThetaI)
 	for (let j = 0; j < K; j++)
 	{
 		const thetas_fwd = thetas.slice();
+		thetas_fwd[j] += DELTA;
+		const z_fwd = getModelVector(gaugPos, thetas_fwd);
+
 		const thetas_bwd = thetas.slice();
+		thetas_bwd[j] -= DELTA;
+		const z_bwd = getModelVector(gaugPos, thetas_bwd);
 
-		const z_fwd = getModelVector(gaugPos, thetas);
-		const z_bwd = getModelVector(gaugPos, thetas);
-
-		L.setElement(0, 0, new Double(/*?*/));
-		
+		for (let i = 0; i < N; i++)
+			L.setElement(j, i, new Double((z_fwd[i] - z_bwd[i]) / (2 * DELTA)));
 	}
 
 	return L;
@@ -105,8 +116,16 @@ function L(ThetaI)
 
 function zThetaI(ThetaI)
 {
-	const zThetaI = new MathMx(1, 1);
-	zThetaI.setElement(0, 0, ThetaI.getElement(0, 0).mul(ThetaI.getElement(0, 0)));
+	const thetas = new Array(K);
 
-	return zThetaI;
+	for (let j = 0; j < K; j++)
+		thetas[j] = ThetaI.getElement(j, 0).a;
+	
+	const zThetaI = getModelVector(gaugPos, thetas);
+	const mx = new MathMx(N, 1);
+
+	for (let i = 0; i < N; i++)
+		mx.setElement(i, 0, new Double(zThetaI[i]));
+
+	return mx;
 }
