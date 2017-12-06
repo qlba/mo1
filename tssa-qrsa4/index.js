@@ -6,7 +6,7 @@ const {getGaugingPositions, getModelVector} = require('./satellite');
 const MCMStep = require('./mcmstep');
 const gauss = require('./gauss');
 
-const PERIOD = 7;
+const PERIOD = 7.2;
 const PASSBAND = 60;
 const SIGMA = 0.05;
 const Xk0 = 4710050;
@@ -19,7 +19,7 @@ const Y0 = -4510043.7;
 const EQUIP_COST = 1e6;
 const GAUGE_COST = 2e3;
 
-const EPSILON = 1;
+const EPSILON = 0.1;
 
 const DELTA = 1;
 
