@@ -6,7 +6,7 @@ const {getGaugingPositions, getModelVector} = require('./satellite');
 const MCMStep = require('./mcmstep');
 const gauss = require('./gauss');
 
-const PERIOD = 7;
+const PERIOD = 10;
 const PASSBAND = 60;
 const SIGMA = 0.1;
 const Xk0 = 4710050;
@@ -16,7 +16,10 @@ const VYk0 = -5000;
 const X0 = 4510043.7;
 const Y0 = -4510043.7;
 
-const EPSILON = 0.01;
+const EQUIP_COST = 1e5;
+const GAUGE_COST = 1e3;
+
+const EPSILON = 1;
 
 const DELTA = 1;
 
@@ -95,6 +98,11 @@ process.stdout.write('\n');
 process.stdout.write(printf('%4s %25f\n',
 	'S',
 	Math.sqrt(resultError.getElement(0, 0).a + resultError.getElement(1, 1).a)
+));
+
+process.stdout.write(printf('%4s %25d\n',
+	'C',
+	EQUIP_COST + N * GAUGE_COST
 ));
 
 // process.stdout.write(resultError.toString());
