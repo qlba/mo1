@@ -16,7 +16,7 @@ const VYk0 = -5000;
 const X0 = 4510043.7;
 const Y0 = -4510043.7;
 
-const EPSILON = 1;
+const EPSILON = 0.01;
 
 const DELTA = 1;
 
@@ -46,7 +46,7 @@ for (let i = 0; i < N; i++)
 const KvInv = new MathMx(N, N);
 KvInv.fill(() => new Double(0));
 for (let i = 0; i < N; i++)
-	KvInv.setElement(i, i, new Double(SIGMA));
+	KvInv.setElement(i, i, new Double(1 / (SIGMA * SIGMA)));
 
 let ThetaI = new MathMx(K, 1);
 ThetaI.setElement(0, 0, new Double(X0_initial_approx));
@@ -76,11 +76,24 @@ for (let i = 0; i < 10; i++)
 	}
 }
 
-console.log(printf('%4s %25f %25f', 'E',
+process.stdout.write('\n');
+
+process.stdout.write(printf('%4s %25f %25f\n',
+	'E',
 	Math.abs(ThetaI.getElement(0, 0) - X0),
 	Math.abs(ThetaI.getElement(1, 0) - Y0)
 ));
-console.log(resultError.toString());
+
+process.stdout.write(printf('%4s %25f %25f\n',
+	'L',
+	Math.sqrt(resultError.getElement(0, 0)),
+	Math.sqrt(resultError.getElement(1, 1))
+));
+
+process.stdout.write('\n');
+
+process.stdout.write(resultError.toString());
+
 
 function L(ThetaI)
 {
