@@ -1,8 +1,9 @@
+
+
 - Manual padding
 - Shop:
     - Showing top X characters
     - Regular: black
     - Nonterminals: 
     - Actions: blue-cyan-blue
-- Tape: X passed black .. Current yellow .. X next grey
 - Postprocessor shop

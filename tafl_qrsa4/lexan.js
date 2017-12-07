@@ -28,6 +28,10 @@ module.exports = function(program)
 				s = 1;
 				ptr++;
 			}
+			else if (isdigit(x)) {
+				s = 2;
+				ptr++;
+			}
 			else
 				throw new Error(`Invalid character ${x} for state ${s}`);
 
@@ -43,6 +47,42 @@ module.exports = function(program)
 			break;
 		default:
 			throw new Error(`Invalid lexan state: ${s}`);
+		}
+	}
+
+	function parseNumber()
+	{
+		let s = 0;
+
+		for (;;)
+		{
+			const x = intape[ptr];
+	
+			switch (s)
+			{
+			case 0:
+				if (isdigit(x))
+					ptr++;
+				else if (x === '.') {
+					s = 3;
+					ptr++;
+				}
+				else {
+					lexems.push(lexem(lexptr, '1', parseFloat(intape.slice(lexptr, ptr))));
+					s = 0;
+				}
+				break;
+			case 1:
+				if (isdigit(x))
+					ptr++;
+				else {
+					lexems.push(lexem(lexptr, '1', parseFloat(intape.slice(lexptr, ptr))));
+					s = 0;
+				}
+				break;
+			default:
+				throw new Error(`Invalid lexan state: ${s}`);
+			}
 		}
 	}
 
