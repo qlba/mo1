@@ -87,70 +87,97 @@ const grammar = `
 `;
 
 const rules = {
-	1: {lhs: 'S', rhs: 'E'},
-	2: {lhs: 'E', rhs: '+(E,E)'},
-	3: {lhs: 'E', rhs: '-(E,E)'},
-	4: {lhs: 'E', rhs: '*(E,E)'},
-	5: {lhs: 'E', rhs: '/(E,E)'},
-	6: {lhs: 'E', rhs: 'a'},
-	7: {lhs: 'E', rhs: '1'}
+	1: {lhs: '<program>', rhs: ['begin', '<operators>', 'end']},
+	2: {lhs: '<operators>', rhs: ['<operator>', '<operators>']},
+	3: {lhs: '<operators>', rhs: []},
+	4: {lhs: '<operator>', rhs: [';']}
 };
 
-const init = 'S';
+const init = '<program>';
 
 const select = {
-	'S': {
-		'+': 1,
-		'-': 1,
-		'*': 1,
-		'/': 1,
-		'a': 1,
-		'1': 1
+	'<program>': {
+		'begin': 1
 	},
-	'E': {
-		'+': 2,
-		'-': 3,
-		'*': 4,
-		'/': 5,
-		'a': 6,
-		'1': 7
+	'<operators>': {
+		';': 2,
+		'end': 3
+	},
+	'<operator>': {
+		';': 4
 	}
 };
 
 const postproc = {
-	1: (state, [E]) =>
+	1: (state, [,program,]) =>
 	{
-		return {type: 'expression', root: E};
+		return {type: 'program', program};
 	},
-	2: (state, [,,E1,,E2]) =>
+	2: (state, [operator, operators]) =>
 	{
-		return {type: 'operation/add', mnemonics: 'ADD', commutative: true, lhs: E1, rhs: E2};
+		return [operator, ...(operators || [])];
 	},
-	3: (state, [,,E1,,E2]) =>
+	3: () =>
 	{
-		return {type: 'operation/sub', mnemonics: 'SUB', shiftable: true, lhs: E1, rhs: E2};
+		return undefined;
 	},
-	4: (state, [,,E1,,E2]) =>
+	4: () =>
 	{
-		return {type: 'operation/mul', mnemonics: 'MUL', commutative: true, lhs: E1, rhs: E2};
+		return {type: 'empty operator'};
 	},
-	5: (state, [,,E1,,E2]) =>
-	{
-		return {type: 'operation/div', mnemonics: 'DIV', lhs: E1, rhs: E2};
-	},
-	6: (state, [a]) =>
-	{
-		return {type: 'value/id', id: a.value};
-	},
-	7: (state, [v]) =>
-	{
-		return {type: 'value/literal', value: v.value};
-	}
+
+	// 1: (state, [E]) =>
+	// {
+	// 	return {type: 'expression', root: E};
+	// },
+	// 2: (state, [,,E1,,E2]) =>
+	// {
+	// 	return {type: 'operation/add', mnemonics: 'ADD', commutative: true, lhs: E1, rhs: E2};
+	// },
+	// 3: (state, [,,E1,,E2]) =>
+	// {
+	// 	return {type: 'operation/sub', mnemonics: 'SUB', shiftable: true, lhs: E1, rhs: E2};
+	// },
+	// 4: (state, [,,E1,,E2]) =>
+	// {
+	// 	return {type: 'operation/mul', mnemonics: 'MUL', commutative: true, lhs: E1, rhs: E2};
+	// },
+	// 5: (state, [,,E1,,E2]) =>
+	// {
+	// 	return {type: 'operation/div', mnemonics: 'DIV', lhs: E1, rhs: E2};
+	// },
+	// 6: (state, [a]) =>
+	// {
+	// 	return {type: 'value/id', id: a.value};
+	// },
+	// 7: (state, [v]) =>
+	// {
+	// 	return {type: 'value/literal', value: v.value};
+	// }
 };
 
 
-const regs = ['eax']; // , 'ecx'
-//const regs = ['eax', 'ecx', 'edx', 'ebx', 'esi', 'edi'];
+// const regs = ['eax']; // , 'ecx'
+const regs = ['eax', 'ecx', 'edx', 'ebx', 'esi', 'edi'];
+
+
+
+
+const program = `
+	begin ;;;; end
+`;
+
+const printf = require('printf');
+
+const lexan = require('./lexan');
+
+const tokens = lexan(program);
+
+tokens.forEach(
+	({offset, type, value}) => console.log(
+		printf('%20d %30s %20s', offset, type, value !== undefined ? value : '')
+	)
+);
 
 
 const Syntan = require('./syntan');
@@ -158,27 +185,6 @@ const syntan = new Syntan(rules, init, select, postproc);
 
 const state = {};
 
-const tokens = [
-	{type: '/'},
-	{type: '('},
-
-	{type: '/'},
-	{type: '('},
-	{type: 'a', value: 'b'},
-	{type: ','},
-	{type: 'a', value: 'b'},
-	{type: ')'},
-	
-	{type: ','},
-	{type: '+'},
-	{type: '('},
-	{type: '1', value: 2},
-	{type: ','},
-	{type: '1', value: 2},
-	{type: ')'},
-	{type: ')'},
-	{type: '$'}
-];
 
 const parsed = syntan.parse(state, tokens);
 
