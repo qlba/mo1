@@ -1,5 +1,90 @@
 const _ = require('lodash');
 
+const grammar = `
+	<программа> -> BEGIN <операторы> END
+	<переменные> -> идентификатор , <переменные>
+	<переменные> -> идентификатор
+	<операторы> -> <оператор> <операторы>
+	<операторы> -> <оператор>
+	<оператор> -> VAR <переменные>;
+	<оператор> -> READ идентификатор ;
+	<оператор> -> WRITE идентификатор ;
+	<оператор> -> <переменные> := <выражение>;
+	<оператор> -> REPEAT <операторы> UNTIL <отношение>;
+	<выражение> -> <выражение> + <терм>
+	<выражение> -> <выражение> – <терм>
+	<выражение> -> <терм>
+	<терм> -> <терм> * <множитель>
+	<терм> -> <терм> / <множитель>
+	<терм> -> <множитель>
+	<множитель> -> идентификатор
+	<множитель> -> число
+	<множитель> -> (<выражение>)
+	<множитель> -> – (<выражение>)
+	<отношение> -> <идентификатор> операция_отношения <выражение>
+`;
+
+`
+	<program> -> <ops>
+
+	<ops> -> <op>;<ops>
+	<ops> -> U
+
+	<op> -> <id>: <op>
+
+	<op> -> { <ops> }
+	<op> -> <op>, <op>
+	<op> -> FUNCTION <id>(<vdecls>) { <ops> }
+	<op> -> CONST <cdecls>
+	<op> -> VAR <vdecls>
+	<op> -> <expr>
+	<op> -> IF (<expr>) <op>
+	<op> -> IF (<expr>) <op> ELSE <op>
+	<op> -> SWITCH (<expr>) { <selector_body> }
+	<op> -> WHILE (<expr>) <op>
+	<op> -> DO <op> WHILE (<expr>)
+	<op> -> REPEAT <op> UNTIL (<expr>)
+	<op> -> FOR (<op>;<expr>;<op>) <op>
+	<op> -> GOTO <id>
+	<op> -> BREAK
+	<op> -> CONTINUE
+	<op> -> RETURN <expr>
+	<op> -> RETURN
+
+
+	<selector_body> -> <selector_op> <selctor_body>
+	<selector_body> -> U
+
+	<selector_op> -> <selector_match>:
+	<selector_op> -> <op>
+
+	<selector_match> -> CASE <expr>
+	<selector_match> -> DEFAULT
+
+
+	<cdecls> -> <cdecl>, <cdecls>
+	<cdecls> -> U
+
+	<vdecls> -> <vdecl>, <vdecls>
+	<vdecls> -> <cdecl>, <vdecls>
+	<vdecls> -> U
+
+	<cdecl> -> <id> = <expr>
+	<vdecl> -> <id>
+
+
+	--<expr> -> <expr> <binop> <expr>
+	--<expr> -> <unop> <expr>
+	--<expr> -> <expr> <unop>
+
+	<expr> -> <id>(<expr_list>)
+	<expr> -> (<expr>)
+	<expr> -> 
+
+
+	<expr_list> -> <expr>, <expr_list>
+	<expr_list> -> U
+`;
 
 const rules = {
 	1: {lhs: 'S', rhs: 'E'},
