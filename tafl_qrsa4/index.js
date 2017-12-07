@@ -87,23 +87,23 @@ const grammar = `
 `;
 
 const rules = {
-	1: {lhs: '<program>', rhs: ['begin', '<operators>', 'end']},
-	2: {lhs: '<operators>', rhs: ['<operator>', '<operators>']},
-	3: {lhs: '<operators>', rhs: []},
-	4: {lhs: '<operator>', rhs: [';']}
+	1: {lhs: '<P>', rhs: ['begin', '<Os>', 'end']},
+	2: {lhs: '<Os>', rhs: ['<O>', '<Os>']},
+	3: {lhs: '<Os>', rhs: []},
+	4: {lhs: '<O>', rhs: [';']}
 };
 
-const init = '<program>';
+const init = '<P>';
 
 const select = {
-	'<program>': {
+	'<P>': {
 		'begin': 1
 	},
-	'<operators>': {
+	'<Os>': {
 		';': 2,
 		'end': 3
 	},
-	'<operator>': {
+	'<O>': {
 		';': 4
 	}
 };
