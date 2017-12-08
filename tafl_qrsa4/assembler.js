@@ -1,395 +1,225 @@
-const chalk = require('chalk');
-const _ = require('lodash');
-
-const STACK_SIZE = 1024;
+const _ = require('underscore');
 
 
-const m = {
-	eax: undefined,
-	ebx: undefined,
-	ecx: undefined,
-	edx: undefined,
-	esi: undefined,
-	edi: undefined,
-	esp: STACK_SIZE - 1,
-	ebp: STACK_SIZE - 1,
-	eip: 0,
-	eflags: {
-		zf: false,
-		sf: false,
-		xf: false,
-		jf: false
+const regs = ['eax', 'ecx', 'edx', 'ebx', 'esi', 'edi'];
+
+const operations = {
+	'add': {
+		mnemonics: 'ADD',
+		commutative: true
 	},
-	stack: new Array(STACK_SIZE)
-};
-
-let mPrev = _.cloneDeep(m);
-let eipPrev = 0;
-
-
-module.exports = async function run(asm) {
-	m.code = _.compact(asm.split('\n')).map(line =>
-		(a => ({mnemonics: a[0], args: a.slice(1)}))(_.compact(line.split(/[ ,\t]/)))
-	);
-
-	for (let round = 0; !m.eflags.xf; round++)
-	{
-		try
-		{
-			const {mnemonics, args} = m.code[eipPrev = I(m.eip)];
-
-			if (!commands[mnemonics])
-				throw new Error(`No such command: ${mnemonics}`);
-
-			commands[mnemonics].func(
-				...checkLocs(commands[mnemonics].locs)(args.map(getParam))
-			);
-
-			process.stdout.write(`\n ------ ------ ${round.toString().padStart(5)}\n`);
-
-			printState(mPrev, eipPrev);
-			mPrev = _.cloneDeep(m);
-			
-			if (!m.eflags.jf)
-				m.eip++;
-			else
-				m.eflags.jf = false;
-			
-			process.stdout.write('Press <RETURN> to continue ...\n');
-		}
-		catch(e)
-		{
-			console.error(e);
-			setImmediate(() => {throw e;});
-			throw e;
-		}
-		
-		await new Promise((resolve) => process.stdin.once('data', resolve));
+	'sub': {
+		mnemonics: 'SUB',
+		shiftable: true
+	},
+	'mul': {
+		mnemonics: 'MUL',
+		commutative: true
+	},
+	'div': {
+		mnemonics: 'DIV'
+	},
+	'neg': {
+		mnemonics: 'NEG'
 	}
-
-	console.log(`Program finished with exit code ${chalk[m.eax === 0 ? 'green' : 'red'](m.eax)}`);
-	process.exit();
 };
 
-const commands = {
-	NOP: {
-		locs: [[]],
-		func: () => 0
-	},
-	INT: {
-		locs: [[/imm/]],
-		func: (id) => interruption(id.get())
-	},
-	MOV: {
-		locs: [
-			[/reg/, /$/], [/mem/, /reg/]
+
+module.exports = function entry(state, parsed)
+{
+	return program(state, parsed);
+};
+
+function program(state, parsed)
+{
+	const main = {
+		name: 'main',
+		args: [
+			// {id: 'd'},
+			// {id: 'e'},
+			// {id: 'f'}
 		],
-		func: (dst, src) => dst.set(src.get())
-	},
-	PUSH: {
-		locs: [[/(reg|imm)/]],
-		func: (src) => {
-			prop.reg('esp').set(prop.reg('esp').get() - 1);
-			prop.mem('esp', +1).set(src.get());
-		}
-	},
-	POP: {
-		locs: [[/(reg|imm)/]],
-		func: (dst) => {
-			dst.set(prop.mem('esp', +1).get());
-			prop.reg('esp').set(prop.reg('esp').get() + 1);
-		}
-	},
-	CALL: {
-		locs: [[/imm/]],
-		func: (addr) => {
-			prop.reg('esp').set(prop.reg('esp').get() - 1);
-			prop.mem('esp', +1).set(prop.reg('eip').get() + 1);
-			prop.reg('eip').set(addr.get());
+		locals: [
+			{id: 'a'},
+			{id: 'b'},
+			{id: 'c'}
+		]
+	};
 
-			m.eflags.jf = true;
-		}
-	},
-	RET: {
-		locs: [[]],
-		func: () => {
-			prop.reg('eip').set(prop.mem('esp', +1).get());
-			prop.reg('esp').set(prop.reg('esp').get() + 1);
-			
-			m.eflags.jf = true;
-		}
-	},
-	ADD: {
-		locs: [[/reg/, /$/]],
-		func: (dst, src) => setFlags(dst.set(dst.get() + src.get()))
-	},
-	SUB: {
-		locs: [[/reg/, /$/], [/mem/, /(reg|imm)/]],
-		func: (dst, src) => setFlags(dst.set(dst.get() - src.get()))
-	},
-	MUL: {
-		locs: [[/reg/, /$/]],
-		func: (dst, src) => setFlags(dst.set(dst.get() * src.get()))
-	},
-	DIV: {
-		locs: [[/reg/, /$/]],
-		func: (dst, src) => setFlags(dst.set(dst.get() / src.get()))
-	},
-	MOD: {
-		locs: [[/reg/, /$/]],
-		func: (dst, src) => setFlags(dst.set(dst.get() % src.get()))
-	},
-	// NEG: 
-	// ABS:
-	// SQRT:
-	// ROUND:
-	// POW:
-	// LOG:
-	// SIN:
-	// COS:
-	// TAN:
-	// CTG:
-	// ASIN:
-	// ACOS:
-	// ATAN:
-	// ACTG:
-	// SINH:
-	// COSH:
-	// TANH:
-	// CTGH:
-	// ASINH:
-	// ACOSH:
-	// ATANH:
-	// ACTGH:
-	// ...
-	// CMP:
-	// TEST:
-	// LNOT:
-	// LAND:
-	// LOR:
-	// JMP:
-	// JE:
-	// JNE:
-	// JL:
-	// JLE:
-	// JG:
-	// JGE:
-	// ...
-	// BNOT:
-	// BAND:
-	// BOR:
-
-};
-
-function interruption(id)
-{
-	switch (id) {
-	case 0:
-		return m.eflags.xf = true;
-	default:
-		throw new Error(`No such interruption: ${id}`);
-	}
-}
-
-
-function getParam(addr)
-{
-	const reg = /^(eax|ebx|ecx|edx|esi|edi|ebp|esp)$/;
-	const mem = /^\[(eax|ebx|ecx|edx|esi|edi|ebp|esp)?([+|-]?\d+)?\]$/;
-
-	if(isFinite(addr))
-		return prop.imm(Number.parseFloat(addr));
-	else if(reg.test(addr))
-		return prop.reg(addr);
-	else if(mem.test(addr))
-		return prop.mem(mem.exec(addr)[1], Number.parseInt(mem.exec(addr)[2]));
-	else
-		throw new Error(`Invalid addressation type: ${addr}`);
-}
-
-function checkLocs(allowed)
-{
-	return function(args) {
-		const config = _.find(allowed, config =>
-			config.length == args.length &&
-			config.every((loc, index) => loc.test(args[index].loc))
-		);
-
-		if (!config)
-			throw new Error('Invalid command configuration');
-		else
-			console.log(`Scheme match: ${config.map(regex => regex.source).join(', ')}`);
-
-		return args;
+	return {
+		out: [
+			'        NOP',
+			'        CALL    3',
+			'        INT     0',
+			...func(state, main, parsed).out
+		]
 	};
 }
 
-const prop = {
-	reg: reg => ({
-		loc: 'reg',
-		get: ( ) => m[reg],
-		set: (x) => m[reg] = R(x)
-	}),
-	mem: (reg, offset) => ({
-		loc: 'mem',
-		get: ( ) => m.stack[M(reg, offset)],
-		set: (x) => m.stack[M(reg, offset)] = R(x)
-	}),
-	imm: imm => ({
-		loc: 'imm',
-		get: ( ) => R(imm),
-		set: (x) => {throw new Error(`Cannot assign value ${R(x)} to immediate`);}
-	})
-};
-
-function R(value)
+function func(state, func, body)
 {
-	if (!Number.isFinite(value))
-		throw new Error(`${value} is not an assembler value`);
+	const args = {};
 
-	return value;
-}
-
-function M(reg, offset)
-{
-	const addr = (reg && R(m[reg]) || 0) + (offset || 0);
-
-	if (!Number.isInteger(addr))
-		throw new Error(`Not a memory cell: ${addr}`);
-
-	if (addr < 0)
-		throw new Error(`Segmentation fault (stack overflow at ${addr})`);
-
-	if (addr <= m.esp)
-		throw new Error(`Segmentation fault (stack pointer overflow at ${addr})`);
-
-	if (addr >= STACK_SIZE)
-		throw new Error(`Segmentation fault (stack underflow at ${addr})`);
-
-	return addr;
-}
-
-function I(addr)
-{
-	if (!Number.isInteger(addr))
-		throw new Error(`Not an instruction cell: ${addr}`);
-
-	if (addr < 0)
-		throw new Error(`Segmentation fault (instruction ${addr})`);
-
-	if (addr >= m.code.length)
-		throw new Error(`Segmentation fault (instruction ${addr} > ${m.code.length - 1})`);
-
-	return addr;
-}
-
-
-function setFlags(res)
-{
-	m.eflags.zf = res === 0;
-	m.eflags.sf = res < 0;
-}
-
-
-function printState(prevState, eip)
-{
-	const result = new Array(10).fill('   ');
-	const diff = getDiff(prevState, m);
-
-	for (let i = 0; i < 10; i++)
-		if (eip - 3 + i < 0 || eip - 3 + i >= m.code.length)
-			result[i] += ' '.repeat(40);
-		else
-			result[i] +=
-				(i === 3 ? '> ' : '  ') +
-				`${eip - 3 + i}:   `.padStart(8) +
-				m.code[eip - 3 + i].mnemonics.padEnd(7) + ' ' +
-				m.code[eip - 3 + i].args.join(', ').padEnd(22);
-
-	result[3] = chalk.yellow(result[3]);
-
-	const stack = _.union(diff.stack, _.range(m.esp + 1, m.esp + 11))
-		.slice(0, 10).sort((x, y) => x - y);
-
-	for (let i = 0; i < 10; i++)
-		result[i] += stack[i] < m.stack.length ?
-			maybeRed(_.includes(diff.stack, stack[i]))(
-				`${stack[i] - m.ebp > 0 ? '+' : ''}${m.ebp !== stack[i] ? stack[i] - m.ebp : 'ebp'}:   `.padStart(9) +
-				`${stack[i]}: `.padStart(6) +
-				`${m.stack[stack[i]]}`.padStart(24)
-			) :
-			' '.repeat(39);
-
-	for (let i = 0; i < 10; i++)
-		result[i] += ' '.repeat(10);
-
-	result[0] += maybeRed(diff.eip)('eip: ' + `${m.eip}`.padStart(24));
-	result[1] += maybeRed(diff.esp)('esp: ' + `${m.esp}`.padStart(24));
-	result[2] += maybeRed(diff.ebp)('ebp: ' + `${m.ebp}`.padStart(24));
-	result[3] += maybeRed(_.values(diff.eflags).some(_.identity))('eflags: ') +
-		' '.repeat(14) + _.keys(m.eflags).map(flag =>
-			maybeRed(diff.eflags[flag])(`${m.eflags[flag] ? flag[0] : '_'}`)
-		).join(' ');
-	result[4] += maybeRed(diff.eax)('eax: ' + `${m.eax}`.padStart(24));
-	result[5] += maybeRed(diff.ebx)('ebx: ' + `${m.ebx}`.padStart(24));
-	result[6] += maybeRed(diff.ecx)('ecx: ' + `${m.ecx}`.padStart(24));
-	result[7] += maybeRed(diff.edx)('edx: ' + `${m.edx}`.padStart(24));
-	result[8] += maybeRed(diff.esi)('esi: ' + `${m.esi}`.padStart(24));
-	result[9] += maybeRed(diff.edi)('edi: ' + `${m.edi}`.padStart(24));
-
-	process.stdout.write(`\n${result.join('\n')}\n`);
-
-	function getDiff(m1, m2)
+	for (let i = 0; i < func.args.length; i++)
 	{
-		const diff = _.chain(m1)
-			.keys()
-			.without('eip', 'eflags', 'stack', 'code')
-			.reject(key => m1[key] === m2[key] && !(_.isNaN(m1[key]) && _.isNaN(m2[key])))
-			.map(key => [key, true])
-			.fromPairs()
-			.value();
+		const arg = func.args[i];
 
-		diff.eip = m2.eflags.jf;
-	
-		diff.stack = _.reject(
-			_.range(0, Math.max(m1.stack.length, m2.stack.length)),
-			index => m1.stack[index] === m2.stack[index] && !(_.isNaN(m1.stack[index]) && _.isNaN(m2.stack[index]))
-		);
-	
-		diff.eflags = {
-			zf: m1.eflags.zf !== m2.eflags.zf,
-			sf: m1.eflags.sf !== m2.eflags.sf,
-			xf: m1.eflags.xf !== m2.eflags.xf,
-			jf: m1.eflags.jf !== m2.eflags.jf
+		if (args[arg.id])
+			throw new Error(`Ambiguous definition of argument ${arg.id} in function ${func.name}`);
+
+		args[arg.id] = {
+			loc: {
+				type: 'm',
+				addr: `[ebp+${2 + func.args.length - i}]`
+			}
 		};
-	
-		return diff;
 	}
 
-	function maybeRed(condition)
+	const locals = {};
+
+	for (let i = 0; i < func.locals.length; i++)
 	{
-		return function(str)
+		const local = func.locals[i];
+
+		if (args[local.id])
+			throw new Error(`Ambiguous definition of argument/variable ${local.id} in function ${func.name}`);
+
+		if (locals[local.id])
+			throw new Error(`Ambiguous definition of variable ${local.id} in function ${func.name}`);
+
+		locals[local.id] = {
+			loc: {
+				type: 'm',
+				addr: `[ebp${-i || ''}]`
+			}
+		};
+	}
+
+	const scope = {
+		vars: Object.assign({}, args, locals),
+		funcs: {}
+	};
+
+	const usedRegs = {};
+
+	const expr = expression(state, scope, regs, body.root, usedRegs);
+
+	return {
+		out: [
+			// `${func.name}:`,
+			'        PUSH    ebp',
+			'        MOV     ebp, esp',
+			`        SUB     esp, ${func.locals.length}`,
+			..._(usedRegs).keys().without('eax').map(reg => `        PUSH    ${reg}`).value(),
+			...expr.out,
+			...(expr.loc.addr === 'eax' ? [] : [`        MOV     eax, ${expr.loc.addr}`]),
+			..._(usedRegs).keys().without('eax').reverse().map(reg => `        POP     ${reg}`).value(),
+			'        MOV     esp, ebp',
+			'        POP     ebp',
+			'        RET'
+		]
+	};
+}
+
+function expression(state, scope, freeRegs, expr, usedRegs)
+{
+	const type = expr.type.split('/');
+	const out = [];
+	let loc, pushes = 0;
+
+	if (type[0] === 'operation')
+	{
+		const lhs = expression(state, scope, freeRegs, expr.lhs, usedRegs);
+		out.push.apply(out, lhs.out);
+
+		const lhsReg = lhs.loc.type === 'r' && lhs.loc.addr;
+		const freeRegsForRhs = _.without(freeRegs, lhsReg);
+
+		const pushLhs = freeRegsForRhs.length < 1 && lhsReg;
+		
+		if (pushLhs)
 		{
-			return condition ? chalk.red(str) : str;
-		};
+			lhs.loc = {type: 'm', addr: '[esp+1]'};
+			out.push(`        PUSH    ${pushLhs}`);
+
+			pushes++;
+		}
+
+		const rhs = expression(state, scope, pushLhs ? freeRegs : freeRegsForRhs, expr.rhs, usedRegs);
+		out.push.apply(out, rhs.out);
+
+		if (lhs.loc.type === 'r')
+		{
+			out.push(`        ${expr.mnemonics.padEnd(7)} ${lhs.loc.addr}, ${rhs.loc.addr}`);
+			loc = lhs.loc;
+		}
+		else if (rhs.loc.type === 'r' && expr.commutative)
+		{
+			out.push(`        ${expr.mnemonics.padEnd(7)} ${rhs.loc.addr}, ${lhs.loc.addr}`);
+			loc = rhs.loc;
+		}
+		else if (rhs.loc.type === 'r' && expr.shiftable)
+		{
+			out.push(`        ${expr.mnemonics.padEnd(7)} ${lhs.loc.addr}, ${rhs.loc.addr}`);
+			loc = lhs.loc;
+		}
+		else if (rhs.loc.type === 'r')
+		{
+			out.push(`        PUSH    ${rhs.loc.addr}`);
+			pushes++;
+
+			if (pushLhs)
+				lhs.loc = {type: 'm', addr: '[esp+2]'};
+
+			out.push(`        MOV     ${rhs.loc.addr}, ${lhs.loc.addr}`);
+			out.push(`        ${expr.mnemonics.padEnd(7)} ${rhs.loc.addr}, [esp+1]`);
+
+			loc = rhs.loc;
+		}
+		else
+		{
+			const reg = _.first(pushLhs ? freeRegs : freeRegsForRhs);
+
+			if (!reg)
+				throw new Error('Register file overload');
+
+			usedRegs[reg] = true;
+
+			out.push(`        MOV     ${reg}, ${lhs.loc.addr}`);
+			out.push(`        ${expr.mnemonics.padEnd(7)} ${reg}, ${_.isEqual(lhs.loc, rhs.loc) ? reg : rhs.loc.addr}`);
+			loc = {type: 'r', addr: reg};
+		}
+
+		if (pushes)
+			out.push(`        ADD     esp, ${pushes}`);
+
+		return {out, loc};
 	}
+	else if (type[0] === 'value')
+	{
+		if (type[1] === 'id')
+		{
+			if (!scope.vars[expr.id])
+				throw new Error(`Undefined reference to ${expr.id}`);
+
+			return {
+				out: [],
+				loc: scope.vars[expr.id].loc
+			};
+		}
+		else if (type[1] === 'literal')
+		{
+			return {
+				out: [],
+				loc: {
+					type: 'imm',
+					addr: expr.value
+				}
+			};
+		}
+		else
+			throw new Error();
+	}
+	else 
+		throw new Error();
 }
-
-
-// ---------
-
-// run(`
-// 		NOP
-// 		CALL	4
-// 		SUB		eax, 5
-// 		INT		0
-// 		MOV		eax, 5
-// 		MUL		eax, eax
-// 		MOD		eax, 10
-// 		ADD		eax, 7
-// 		MOV		ecx, eax
-// 		PUSH	60
-// 		POP		eax
-// 		DIV		eax, ecx
-// 		RET
-// `);

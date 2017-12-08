@@ -1,63 +1,68 @@
+const types = {
+	whitespace: {
+		regex: /[ \t\n]/g,
+		lexem: () => lexem()
+	},
+	keyword: {
+		regex: /(var|begin|end|read|write|repeat|until)/g,
+		lexem: match => lexem(match)
+	},
+	identifier: {
+		regex: /[A-Za-z_][0-9A-Za-z_]*/g,
+		lexem: match => lexem('identifier', match)
+	},
+	number: {
+		regex: /[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?/g,
+		lexem: match => lexem('number', parseFloat(match))
+	},
+	comment: {
+		regex: /(\/\*(.|\n)*?\*\/|\/\/.*?(\n|$))/g,
+		lexem: () => lexem()
+	},
+	aryth: {
+		regex: /[+-/*]/g,
+		lexem: match => lexem(match)
+	},
+	relation: {
+		regex: /(==|!=|<=?|>=?)/g,
+		lexem: match => lexem('relation_operation', match)
+	},
+	assignment: {
+		regex: /=/g,
+		lexem: () => lexem('=')
+	},
+	specials: {
+		regex: /[(),;]/g,
+		lexem: match => lexem(match)
+	},
+	endOfFile: {
+		regex: /$/g,
+		lexem: () => lexem('$')
+	}
+};
+
 module.exports = function(source)
 {
-	let offset = 0, done = false;
-
 	const lexems = [];
+	let offset = 0;
 
-	const types = {
-		whitespace: {
-			regex: /^[ \t\n]/,
-			proc: () => {}
-		},
-		keyword: {
-			regex: /^(var|begin|end|read|write|repeat|until)/,
-			proc: match => lexems.push(lexem(offset, match))
-		},
-		identifier: {
-			regex: /^[A-Za-z_][0-9A-Za-z_]*/,
-			proc: match => lexems.push(lexem(offset, 'identifier', match))
-		},
-		float: {
-			regex: /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?/,
-			proc: match => lexems.push(lexem(offset, 'float', parseFloat(match)))
-		},
-		comment: {
-			regex: /^(\/\*(.|\n)*?\*\/|\/\/.*?(\n|$))/,
-			proc: () => {}
-		},
-		aryth: {
-			regex: /^[+-/*]/,
-			proc: match => lexems.push(lexem(offset, match))
-		},
-		relation: {
-			regex: /^(==|!=|<=?|>=?)/,
-			proc: match => lexems.push(lexem(offset, 'relation_operation', match))
-		},
-		assignment: {
-			regex: /^=/,
-			proc: () => lexems.push(lexem(offset, '='))
-		},
-		specials: {
-			regex: /^[(),;]/,
-			proc: match => lexems.push(lexem(offset, match))
-		},
-		endOfFile: {
-			regex: /^$/,
-			proc: match => {lexems.push(lexem(offset, '$')); done = true;}
-		}
-	};
-
-	while (!done)
+	while (offset < source.length)
 	{
 		let matched = false;
 
 		for (let type in types)
 		{
+			types[type].regex.lastIndex = offset;
+
 			const match = types[type].regex.exec(source);
 
-			if (match)
+			if (match && match.index === offset)
 			{
-				types[type].proc(matched = match[0]);
+				const {type, value} = types[type].lexem(matched = match[0]);
+
+				if (lexem.type)
+					lexems.push({offset, type, value});
+
 				break;
 			}
 		}
@@ -65,14 +70,13 @@ module.exports = function(source)
 		if (matched === false)
 			throw new Error(`Unknown lexem at ${offset}`);
 
-		source = source.slice(matched.length);
 		offset += matched.length;
 	}
 
 	return lexems;
 };
 
-function lexem(offset, type, value)
+function lexem(type, value)
 {
-	return {offset, type, value};
+	return {type, value};
 }
