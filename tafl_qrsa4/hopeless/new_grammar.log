@@ -1,0 +1,64 @@
+S V Q O E T P R
+i c r b e v a w p u , ; = + – * / ( )
+
+S -> b Q e
+V -> V , i
+V -> i
+Q -> Q O
+Q -> O
+O -> v V ;
+O -> a i ;
+O -> w i ;
+O -> V = E ;
+O -> p Q u R ;
+E -> E + T
+E -> E – T
+E -> T
+T -> T * P
+T -> T / P
+T -> P
+P -> i
+P -> c
+P -> ( E )
+P -> – ( E )
+R -> i r E
+
+	first       follow
+S   b           $
+V   i           , ; =
+Q   v a w p i   v a w p i u e
+O   v a w p i   v a w p i u e
+E   i c ( -     ; ) + -
+T   i c ( -     ; ) + - * /
+P   i c ( -     ; ) + - * /
+R   i           ;
+
+	i   c   r   b   e   v   a   w   p   u   ,   ;   =   +   –   *   /   (   )   $
+S
+V
+Q
+O	O				O	O	O	O	O	O					
+E
+T												O		O	O				O
+P												O		O	O	O	O		O
+R
+i											O	O	O	O	O	O	O		O
+c												O		O	O	O	O		O
+r
+b
+e																				O
+v
+a
+w
+p
+u
+,
+;	O				O	O	O	O	O	O					
+=
++
+–
+*
+/
+(
+)
+$

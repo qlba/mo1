@@ -8,20 +8,18 @@ const exec = require('./env');
 const program =
 `
 	begin
-/*		var min, x;
+		var min, x;
 
 		read min;
 
 		x = 1;
 
 		repeat
-			x = - (-(x) * (2 - 1 + 1));
+			x = x * 2;
 		until
-			x < min;
+			min <= x;
 
 		write x;
-*/
-	x = 2 - 1 + 1;
 	end
 `;
 
@@ -40,7 +38,7 @@ const stucture = syntan(state, tokens);
 
 console.dir(stucture, {depth: null});
 
-// if (!stucture.accept)
+if (!stucture.accept)
 	process.exit(-1);
 
 

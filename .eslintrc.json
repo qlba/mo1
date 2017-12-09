@@ -30,6 +30,9 @@
         //     "error",
         //     "1tbs"
         // ],
+        "no-case-declarations": [
+            "off"
+        ],
         "no-console": "warn"
     }
 }

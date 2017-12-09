@@ -209,11 +209,11 @@ const postproc = {
 	},
 	21: (state, [identifier]) =>
 	{
-		return {type: 'value/identifier', identifier: identifier.value};
+		return {type: 'value/identifier', id: identifier.value};
 	},
 	22: (state, [number]) =>
 	{
-		return {type: 'value/number', number: number.value};
+		return {type: 'value/number', value: number.value};
 	},
 	23: (state, [, expression]) =>
 	{

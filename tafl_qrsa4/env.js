@@ -41,7 +41,7 @@ module.exports = async function run(asm) {
 			if (!commands[mnemonics])
 				throw new Error(`No such command: ${mnemonics}`);
 
-			commands[mnemonics].func(
+			await commands[mnemonics].func(
 				...checkLocs(commands[mnemonics].locs)(args.map(getParam))
 			);
 
@@ -78,11 +78,11 @@ const commands = {
 	},
 	INT: {
 		locs: [[/imm/]],
-		func: (id) => interruption(id.get())
+		func: async (id) => await interruption(id.get())
 	},
 	MOV: {
 		locs: [
-			[/reg/, /$/], [/mem/, /reg/]
+			[/reg/, /$/], [/mem/, /(reg|imm)/]
 		],
 		func: (dst, src) => dst.set(src.get())
 	},
@@ -139,6 +139,36 @@ const commands = {
 		locs: [[/reg/, /$/]],
 		func: (dst, src) => setFlags(dst.set(dst.get() % src.get()))
 	},
+	CMP: {
+		locs: [[/reg/, /$/], [/mem/, /(reg|imm)/]],
+		func: (lhs, rhs) => setFlags(lhs.get() - rhs.get())
+	},
+	JE: {
+		locs: [[/imm/]],
+		func: (instruction) => m.eflags.zf && (m.eflags.jf = true) && prop.reg('eip').set(instruction.get())
+	},
+	JNE: {
+		locs: [[/imm/]],
+		func: (instruction) => !m.eflags.zf && (m.eflags.jf = true) && prop.reg('eip').set(instruction.get())
+
+	},
+	JL: {
+		locs: [[/imm/]],
+		func: (instruction) => m.eflags.sf && (m.eflags.jf = true) && prop.reg('eip').set(instruction.get())
+	},
+	JLE: {
+		locs: [[/imm/]],
+		func: (instruction) => m.eflags.sf || m.eflags.zf && (m.eflags.jf = true) && prop.reg('eip').set(instruction.get())
+	},
+	JG: {
+		locs: [[/imm/]],
+		func: (instruction) => !m.eflags.sf && !m.eflags.zf && (m.eflags.jf = true) && prop.reg('eip').set(instruction.get())
+	},
+	JGE: {
+		locs: [[/imm/]],
+		func: (instruction) => !m.eflags.sf && (m.eflags.jf = true) && prop.reg('eip').set(instruction.get())
+	}
+	
 	// NEG: 
 	// ABS:
 	// SQRT:
@@ -181,11 +211,31 @@ const commands = {
 
 };
 
-function interruption(id)
+async function interruption(id)
 {
 	switch (id) {
 	case 0:
 		return m.eflags.xf = true;
+	case 1:
+		return prop.reg('eax').set(
+			await new Promise(resolve =>
+				process.stdin.once('data', data => resolve(parseFloat(data)))
+			)
+		);
+	case 2:
+		for(;;) {
+			const char = prop.mem('esp', +1).get();
+
+			prop.reg('esp').set(prop.reg('esp').get() + 1);
+
+			if (!char)
+				break;
+
+			process.stdout.write(chalk.cyan(String.fromCharCode(char)));
+		}
+		break;
+	case 3:
+		return console.log(chalk.cyan(prop.reg('eax').get()));
 	default:
 		throw new Error(`No such interruption: ${id}`);
 	}
@@ -218,7 +268,8 @@ function checkLocs(allowed)
 		if (!config)
 			throw new Error('Invalid command configuration');
 		else
-			console.log(`Scheme match: ${config.map(regex => regex.source).join(', ')}`);
+			// console.log(`Scheme match: ${config.map(regex => regex.source).join(', ')}`)
+			;
 
 		return args;
 	};
@@ -374,22 +425,3 @@ function printState(prevState, eip)
 		};
 	}
 }
-
-
-// ---------
-
-// run(`
-// 		NOP
-// 		CALL	4
-// 		SUB		eax, 5
-// 		INT		0
-// 		MOV		eax, 5
-// 		MUL		eax, eax
-// 		MOD		eax, 10
-// 		ADD		eax, 7
-// 		MOV		ecx, eax
-// 		PUSH	60
-// 		POP		eax
-// 		DIV		eax, ecx
-// 		RET
-// `);
