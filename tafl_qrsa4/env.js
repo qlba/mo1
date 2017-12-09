@@ -136,6 +136,10 @@ const commands = {
 		locs: [[/reg/, /$/]],
 		func: (dst, src) => setFlags(dst.set(dst.get() / src.get()))
 	},
+	NEG: {
+		locs: [[/reg/]],
+		func: (dst) => setFlags(dst.set(-dst.get()))
+	},
 	MOD: {
 		locs: [[/reg/, /$/]],
 		func: (dst, src) => setFlags(dst.set(dst.get() % src.get()))
@@ -366,7 +370,7 @@ function printState(prevState, eip)
 	for (let i = 0; i < 10; i++)
 		result[i] += stack[i] < m.stack.length ?
 			maybeRed(_.includes(diff.stack, stack[i]))(
-				`${stack[i] - m.esp > 0 ? '+' : ''}${m.esp !== stack[i] ? stack[i] - m.esp : 'esp'}:   `.padStart(9) +
+				`${stack[i] - m.ebp > 0 ? '+' : ''}${m.ebp !== stack[i] ? stack[i] - m.ebp : 'ebp'}:   `.padStart(9) +
 				`${stack[i]}: `.padStart(6) +
 				`${m.stack[stack[i]]}`.padStart(24)
 			) :

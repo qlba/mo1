@@ -69,7 +69,7 @@ module.exports = function(source)
 		}
 
 		if (matched === false)
-			throw new Error(`Unknown lexem at ${offset}`);
+			throw new Error(`Unknown lexem at line ${line} (offset ${offset})`);
 
 		if (matched.length === 0)
 			break;

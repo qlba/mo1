@@ -222,7 +222,7 @@ const postproc = {
 	24: (state, [, , expression]) =>
 	{
 		return {
-			type: 'operation/unary/negation',
+			type: 'operation/unary/neg',
 			hs: expression
 		};
 	},

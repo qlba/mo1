@@ -29,15 +29,16 @@ module.exports = function entry(state, parsed)
 {
 	return {out: [
 		'        NOP',
-		'        CALL    3',
+		'        MOV     ebp, esp',
+		'        CALL    4',
 		'        INT     0',
-		...operators(parsed, {}, 3).out,
+		...operators(parsed, {}, 4, 0).out,
 		'        MOV     eax, 0',
 		'        RET'
 	]};
 };
 
-function operators(parsed, oldScope, offset)
+function operators(parsed, oldScope, offset, stack)
 {
 	const newVarsList = _.chain(parsed)
 		.filter({type: 'variables_declaration'})
@@ -57,7 +58,7 @@ function operators(parsed, oldScope, offset)
 		newVars[newVar] = {
 			loc: {
 				type: 'm',
-				addr: `[esp+${i + 1}]`
+				addr: `[ebp-${stack + i + 1}]`
 			}
 		};
 	}
@@ -123,7 +124,7 @@ function operators(parsed, oldScope, offset)
 			if (!scope[identifier])
 				throw new Error(`Undefined reference to ${identifier}`);
 
-			const body = operators(operator.operators, scope, offset + 1);
+			const body = operators(operator.operators, scope, offset + 1, stack + newVarsList.length);
 
 			expr = expression(scope, regs, operator.expression, {});
 
@@ -354,7 +355,25 @@ function expression(scope, freeRegs, expr, usedRegs)
 
 			return {out, loc};
 		}
-		else 
+		else if (type[1] === 'unary')
+		{
+			const hs = expression(scope, freeRegs, expr.hs, usedRegs);
+			out.push.apply(out, hs.out);
+
+			if (hs.loc.type !== 'r')
+			{
+				const freeReg = _.first(freeRegs);
+
+				out.push(`        MOV     ${freeReg}, ${hs.loc.addr}`);
+				hs.loc = {type: 'r', addr: freeReg};
+			}
+
+			out.push(`        ${op.mnemonics.padEnd(7)} ${hs.loc.addr}`);
+			loc = hs.loc;
+
+			return {out, loc};
+		}
+		else
 			throw new Error();
 	}
 	else if (type[0] === 'value')
