@@ -1,0 +1,5 @@
+begin
+    var x;
+    x = 2 + 2 * 2 + 2 + (2 * 2 * 2 * 2 - 7) / 3;
+    write x;
+end
