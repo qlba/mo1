@@ -20,6 +20,9 @@ const exec = require('./env');
 		})
 		.argv;
 
+	// source = 'tafl_qrsa4/test/p1.lang';
+	// mode = 'run';
+
 
 	const program = fs.readFileSync(source).toString();
 

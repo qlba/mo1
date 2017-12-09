@@ -1,0 +1,16 @@
+begin
+	var min, v, p;
+
+	read min;
+
+	p = 0;
+	v = 1;
+
+	repeat
+		v = v * 2;
+		p = p + 1;
+	until
+		min < v;
+
+	write p;
+end

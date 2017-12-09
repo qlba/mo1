@@ -1,0 +1,22 @@
+begin
+    var i, s;
+    s, i = 0;
+
+    j = 1;
+
+    repeat
+        var s, j;
+        s, j = 0;
+
+        repeat
+            s = s + 1;
+            j = j + 1;
+        until
+            j == 2;
+        
+        i = i + 1;
+    until
+        i == 2;
+
+    write s;
+end

@@ -21,13 +21,13 @@ const rules = {
 	12: {lhs: '<rest_vars>', rhs: []},
 
 	13: {lhs: '<expression>', rhs: ['<term>', '<rest_expression>']},
-	14: {lhs: '<rest_expression>', rhs: ['+', '<term>', '<rest_expression>']},
-	15: {lhs: '<rest_expression>', rhs: ['-', '<term>', '<rest_expression>']},
+	14: {lhs: '<rest_expression>', rhs: ['+', '<expression>']},
+	15: {lhs: '<rest_expression>', rhs: ['-', '<expression>']},
 	16: {lhs: '<rest_expression>', rhs: []},
 
 	17: {lhs: '<term>', rhs: ['<multiplier>', '<rest_term>']},
-	18: {lhs: '<rest_term>', rhs: ['*', '<multiplier>', '<rest_term>']},
-	19: {lhs: '<rest_term>', rhs: ['/', '<multiplier>', '<rest_term>']},
+	18: {lhs: '<rest_term>', rhs: ['*', '<term>']},
+	19: {lhs: '<rest_term>', rhs: ['/', '<term>']},
 	20: {lhs: '<rest_term>', rhs: []},
 
 	21: {lhs: '<multiplier>', rhs: ['identifier']},
