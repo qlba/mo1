@@ -1,0 +1,13 @@
+begin
+    var s, a;
+
+    read s;
+    a = 0;
+
+    repeat
+        a = 3 * a + 1;
+    until
+        a > s - 1;
+
+    write a;
+end

@@ -163,11 +163,11 @@ const commands = {
 	},
 	JLE: {
 		locs: [[/imm/]],
-		func: (instruction) => m.eflags.sf || m.eflags.zf && (m.eflags.jf = true) && prop.reg('eip').set(instruction.get())
+		func: (instruction) => (m.eflags.sf || m.eflags.zf) && (m.eflags.jf = true) && prop.reg('eip').set(instruction.get())
 	},
 	JG: {
 		locs: [[/imm/]],
-		func: (instruction) => !m.eflags.sf && !m.eflags.zf && (m.eflags.jf = true) && prop.reg('eip').set(instruction.get())
+		func: (instruction) => (!m.eflags.sf && !m.eflags.zf) && (m.eflags.jf = true) && prop.reg('eip').set(instruction.get())
 	},
 	JGE: {
 		locs: [[/imm/]],
