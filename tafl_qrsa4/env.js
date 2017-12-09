@@ -27,7 +27,7 @@ let mPrev = _.cloneDeep(m);
 let eipPrev = 0;
 
 
-module.exports = async function run(asm) {
+module.exports = async function run(asm, debug) {
 	m.code = _.compact(asm.split('\n')).map(line =>
 		(a => ({mnemonics: a[0], args: a.slice(1)}))(_.compact(line.split(/[ ,\t]/)))
 	);
@@ -45,17 +45,17 @@ module.exports = async function run(asm) {
 				...checkLocs(commands[mnemonics].locs)(args.map(getParam))
 			);
 
-			process.stdout.write(`\n ------ ------ ${round.toString().padStart(5)}\n`);
+			debug && process.stdout.write(`\n ------ ------ ${round.toString().padStart(5)}\n`);
 
-			printState(mPrev, eipPrev);
-			mPrev = _.cloneDeep(m);
+			debug && printState(mPrev, eipPrev);
+			debug && (mPrev = _.cloneDeep(m));
 			
 			if (!m.eflags.jf)
 				m.eip++;
 			else
 				m.eflags.jf = false;
 			
-			process.stdout.write('Press <RETURN> to continue ...\n');
+			debug && process.stdout.write('Press <RETURN> to continue ...\n');
 		}
 		catch(e)
 		{
@@ -64,11 +64,12 @@ module.exports = async function run(asm) {
 			throw e;
 		}
 		
-		await new Promise((resolve) => process.stdin.once('data', resolve));
+		debug && await new Promise((resolve) => process.stdin.once('data', resolve));
 	}
 
-	console.log(`Program finished with exit code ${chalk[m.eax === 0 ? 'green' : 'red'](m.eax)}`);
-	process.exit();
+	debug && console.log(`Program finished with exit code ${chalk[m.eax === 0 ? 'green' : 'red'](m.eax)}`);
+
+	return m.eax;
 };
 
 const commands = {
@@ -365,7 +366,7 @@ function printState(prevState, eip)
 	for (let i = 0; i < 10; i++)
 		result[i] += stack[i] < m.stack.length ?
 			maybeRed(_.includes(diff.stack, stack[i]))(
-				`${stack[i] - m.ebp > 0 ? '+' : ''}${m.ebp !== stack[i] ? stack[i] - m.ebp : 'ebp'}:   `.padStart(9) +
+				`${stack[i] - m.esp > 0 ? '+' : ''}${m.esp !== stack[i] ? stack[i] - m.esp : 'esp'}:   `.padStart(9) +
 				`${stack[i]}: `.padStart(6) +
 				`${m.stack[stack[i]]}`.padStart(24)
 			) :

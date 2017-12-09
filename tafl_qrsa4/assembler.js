@@ -278,8 +278,6 @@ function func(state, func, body)
 
 function expression(scope, freeRegs, expr, usedRegs)
 {
-	console.dir(expr);
-
 	const type = expr.type.split('/');
 	const out = [];
 	let loc, pushes = 0;

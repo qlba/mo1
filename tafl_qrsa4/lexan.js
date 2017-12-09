@@ -45,6 +45,7 @@ module.exports = function(source)
 {
 	const lexems = [];
 	let offset = 0;
+	let line = 1;
 
 	for (;;)
 	{
@@ -61,7 +62,7 @@ module.exports = function(source)
 				const {type, value} = types[lexType].lexem(matched = match[0]);
 
 				if (type)
-					lexems.push({offset, type, value});
+					lexems.push({offset, line, type, value});
 
 				break;
 			}
@@ -72,6 +73,9 @@ module.exports = function(source)
 
 		if (matched.length === 0)
 			break;
+
+		if (source[offset] === '\n')
+			line++;
 
 		offset += matched.length;
 	}

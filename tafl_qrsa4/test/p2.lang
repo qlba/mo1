@@ -1,0 +1,14 @@
+begin
+	var min, x;
+
+	read min;
+
+	x = 1;
+
+	repeat
+		x = x * 2;
+	until
+		min <= x;
+
+	write x;
+end

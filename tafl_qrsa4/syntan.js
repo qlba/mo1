@@ -232,7 +232,7 @@ const postproc = {
 	}
 };
 
-module.exports = function(state, input)
+module.exports = function(state, input, verbose)
 {
 	const shop = new Shop('$', init);
 	const tape = new Tape(input);
@@ -245,7 +245,7 @@ module.exports = function(state, input)
 	{
 		const M = shop.peek();
 		const x = tape.get();
-	
+
 		const state = {};
 		state.shop = shop.toString();
 		state.tape = tape.toString();
@@ -297,8 +297,13 @@ module.exports = function(state, input)
 			done = true;
 		}
 	
-		// log('%4d %25s %25s  %s  %s  %s\n', round, state.shop, state.tape.map(x => x.type).join(''), state.M, state.x.type, state.action);
+		verbose && log('%4d %25s %25s  %s  %s  %s\n', round, state.shop, state.tape.map(x => x.type).join(''), state.M, state.x.type, state.action);
 	}
+
+	if (!accept)
+		throw new Error(`Syntax error at line ${tape.get().line} ` +
+			`(position ${tape.get().offset}), ` +
+			`expected ${shop.peek()}, got ${tape.get().type}`);
 	
 	return {
 		accept,
