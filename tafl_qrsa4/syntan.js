@@ -21,20 +21,20 @@ const rules = {
 	12: {lhs: '<rest_vars>', rhs: []},
 
 	13: {lhs: '<expression>', rhs: ['<term>', '<rest_expression>']},
-	14: {lhs: '<rest_expression>', rhs: ['+', '<expression>']},
-	15: {lhs: '<rest_expression>', rhs: ['-', '<expression>']},
+	14: {lhs: '<rest_expression>', rhs: ['+', '<term>', '<rest_expression>']},
+	15: {lhs: '<rest_expression>', rhs: ['-', '<term>', '<rest_expression>']},
 	16: {lhs: '<rest_expression>', rhs: []},
 
 	17: {lhs: '<term>', rhs: ['<multiplier>', '<rest_term>']},
-	18: {lhs: '<rest_term>', rhs: ['*', '<term>']},
-	19: {lhs: '<rest_term>', rhs: ['/', '<term>']},
+	18: {lhs: '<rest_term>', rhs: ['*', '<multiplier>', '<rest_term>']},
+	19: {lhs: '<rest_term>', rhs: ['/', '<multiplier>', '<rest_term>']},
 	20: {lhs: '<rest_term>', rhs: []},
-	
+
 	21: {lhs: '<multiplier>', rhs: ['identifier']},
 	22: {lhs: '<multiplier>', rhs: ['number']},
 	23: {lhs: '<multiplier>', rhs: ['(', '<expression>', ')']},
 	24: {lhs: '<multiplier>', rhs: ['-', '(', '<expression>', ')']},
-	
+
 	25: {lhs: '<relation>', rhs: ['identifier', 'relation_operation', '<expression>']}
 };
 
@@ -131,19 +131,19 @@ const postproc = {
 	},
 	5: (state, [, vars]) =>
 	{
-		return {type: 'variables_declaration', vars};
+		return {type: 'variables_declaration', vars: vars.map(v => v.value)};
 	},
 	6: (state, [, identifier]) =>
 	{
-		return {type: 'read', identifier};
+		return {type: 'read', identifier: identifier.value};
 	},
 	7: (state, [, identifier]) =>
 	{
-		return {type: 'write', identifier};
+		return {type: 'write', identifier: identifier.value};
 	},
 	8: (state, [vars, , expression]) =>
 	{
-		return {type: 'assignment', vars, expression};
+		return {type: 'assignment', vars: vars.map(v => v.value), expression};
 	},
 	9: (state, [, operators, , {identifier, relation_operator, expression}]) =>
 	{
@@ -195,13 +195,13 @@ const postproc = {
 		else
 			return multiplier;
 	},
-	18: (state, [, expression]) =>
+	18: (state, [, term]) =>
 	{
-		return {op: 'mul', expression};
+		return {op: 'mul', term};
 	},
-	19: (state, [, expression]) =>
+	19: (state, [, term]) =>
 	{
-		return {op: 'div', expression};
+		return {op: 'div', term};
 	},
 	20: () =>
 	{
@@ -209,11 +209,11 @@ const postproc = {
 	},
 	21: (state, [identifier]) =>
 	{
-		return {op: 'value/identifier', identifier: identifier.value};
+		return {type: 'value/identifier', identifier: identifier.value};
 	},
 	22: (state, [number]) =>
 	{
-		return {op: 'value/number', number: number.value};
+		return {type: 'value/number', number: number.value};
 	},
 	23: (state, [, expression]) =>
 	{
@@ -228,7 +228,7 @@ const postproc = {
 	},
 	25: (state, [identifier, relation_operator, expression]) =>
 	{
-		return {identifier, relation_operator, expression};
+		return {identifier: identifier.value, relation_operator: relation_operator.value, expression};
 	}
 };
 
@@ -297,7 +297,7 @@ module.exports = function(state, input)
 			done = true;
 		}
 	
-		log('%4d %25s %25s  %s  %s  %s\n', round, state.shop, state.tape.map(x => x.type).join(''), state.M, state.x.type, state.action);
+		// log('%4d %25s %25s  %s  %s  %s\n', round, state.shop, state.tape.map(x => x.type).join(''), state.M, state.x.type, state.action);
 	}
 	
 	return {

@@ -46,21 +46,21 @@ module.exports = function(source)
 	const lexems = [];
 	let offset = 0;
 
-	while (offset < source.length)
+	for (;;)
 	{
 		let matched = false;
 
-		for (let type in types)
+		for (let lexType in types)
 		{
-			types[type].regex.lastIndex = offset;
+			types[lexType].regex.lastIndex = offset;
 
-			const match = types[type].regex.exec(source);
+			const match = types[lexType].regex.exec(source);
 
 			if (match && match.index === offset)
 			{
-				const {type, value} = types[type].lexem(matched = match[0]);
+				const {type, value} = types[lexType].lexem(matched = match[0]);
 
-				if (lexem.type)
+				if (type)
 					lexems.push({offset, type, value});
 
 				break;
@@ -69,6 +69,9 @@ module.exports = function(source)
 
 		if (matched === false)
 			throw new Error(`Unknown lexem at ${offset}`);
+
+		if (matched.length === 0)
+			break;
 
 		offset += matched.length;
 	}

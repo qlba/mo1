@@ -1,0 +1,16 @@
+begin
+	var x1, x2, a;
+
+	read x1;
+	read x2;
+	read a;
+
+	var b, c;
+
+	b = - (x1 + x2) * a;
+	c = x1 * x2 * a;
+
+	write a;
+	write b;
+	write c;
+end

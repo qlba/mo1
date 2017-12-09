@@ -1,4 +1,4 @@
-const _ = require('underscore');
+const _ = require('lodash');
 
 
 const regs = ['eax', 'ecx', 'edx', 'ebx', 'esi', 'edi'];
@@ -129,71 +129,78 @@ function expression(state, scope, freeRegs, expr, usedRegs)
 
 	if (type[0] === 'operation')
 	{
-		const lhs = expression(state, scope, freeRegs, expr.lhs, usedRegs);
-		out.push.apply(out, lhs.out);
+		const op = operations[type[2]];
 
-		const lhsReg = lhs.loc.type === 'r' && lhs.loc.addr;
-		const freeRegsForRhs = _.without(freeRegs, lhsReg);
-
-		const pushLhs = freeRegsForRhs.length < 1 && lhsReg;
-		
-		if (pushLhs)
+		if (type[1] === 'binary')
 		{
-			lhs.loc = {type: 'm', addr: '[esp+1]'};
-			out.push(`        PUSH    ${pushLhs}`);
+			const lhs = expression(state, scope, freeRegs, expr.lhs, usedRegs);
+			out.push.apply(out, lhs.out);
 
-			pushes++;
-		}
+			const lhsReg = lhs.loc.type === 'r' && lhs.loc.addr;
+			const freeRegsForRhs = _.without(freeRegs, lhsReg);
 
-		const rhs = expression(state, scope, pushLhs ? freeRegs : freeRegsForRhs, expr.rhs, usedRegs);
-		out.push.apply(out, rhs.out);
-
-		if (lhs.loc.type === 'r')
-		{
-			out.push(`        ${expr.mnemonics.padEnd(7)} ${lhs.loc.addr}, ${rhs.loc.addr}`);
-			loc = lhs.loc;
-		}
-		else if (rhs.loc.type === 'r' && expr.commutative)
-		{
-			out.push(`        ${expr.mnemonics.padEnd(7)} ${rhs.loc.addr}, ${lhs.loc.addr}`);
-			loc = rhs.loc;
-		}
-		else if (rhs.loc.type === 'r' && expr.shiftable)
-		{
-			out.push(`        ${expr.mnemonics.padEnd(7)} ${lhs.loc.addr}, ${rhs.loc.addr}`);
-			loc = lhs.loc;
-		}
-		else if (rhs.loc.type === 'r')
-		{
-			out.push(`        PUSH    ${rhs.loc.addr}`);
-			pushes++;
-
+			const pushLhs = freeRegsForRhs.length < 1 && lhsReg;
+			
 			if (pushLhs)
-				lhs.loc = {type: 'm', addr: '[esp+2]'};
+			{
+				lhs.loc = {type: 'm', addr: '[esp+1]'};
+				out.push(`        PUSH    ${pushLhs}`);
 
-			out.push(`        MOV     ${rhs.loc.addr}, ${lhs.loc.addr}`);
-			out.push(`        ${expr.mnemonics.padEnd(7)} ${rhs.loc.addr}, [esp+1]`);
+				pushes++;
+			}
 
-			loc = rhs.loc;
+			const rhs = expression(state, scope, pushLhs ? freeRegs : freeRegsForRhs, op.rhs, usedRegs);
+			out.push.apply(out, rhs.out);
+
+			if (lhs.loc.type === 'r')
+			{
+				out.push(`        ${op.mnemonics.padEnd(7)} ${lhs.loc.addr}, ${rhs.loc.addr}`);
+				loc = lhs.loc;
+			}
+			else if (rhs.loc.type === 'r' && op.commutative)
+			{
+				out.push(`        ${op.mnemonics.padEnd(7)} ${rhs.loc.addr}, ${lhs.loc.addr}`);
+				loc = rhs.loc;
+			}
+			else if (rhs.loc.type === 'r' && op.shiftable)
+			{
+				out.push(`        ${op.mnemonics.padEnd(7)} ${lhs.loc.addr}, ${rhs.loc.addr}`);
+				loc = lhs.loc;
+			}
+			else if (rhs.loc.type === 'r')
+			{
+				out.push(`        PUSH    ${rhs.loc.addr}`);
+				pushes++;
+
+				if (pushLhs)
+					lhs.loc = {type: 'm', addr: '[esp+2]'};
+
+				out.push(`        MOV     ${rhs.loc.addr}, ${lhs.loc.addr}`);
+				out.push(`        ${op.mnemonics.padEnd(7)} ${rhs.loc.addr}, [esp+1]`);
+
+				loc = rhs.loc;
+			}
+			else
+			{
+				const reg = _.first(pushLhs ? freeRegs : freeRegsForRhs);
+
+				if (!reg)
+					throw new Error('Register file overload');
+
+				usedRegs[reg] = true;
+
+				out.push(`        MOV     ${reg}, ${lhs.loc.addr}`);
+				out.push(`        ${op.mnemonics.padEnd(7)} ${reg}, ${_.isEqual(lhs.loc, rhs.loc) ? reg : rhs.loc.addr}`);
+				loc = {type: 'r', addr: reg};
+			}
+
+			if (pushes)
+				out.push(`        ADD     esp, ${pushes}`);
+
+			return {out, loc};
 		}
-		else
-		{
-			const reg = _.first(pushLhs ? freeRegs : freeRegsForRhs);
-
-			if (!reg)
-				throw new Error('Register file overload');
-
-			usedRegs[reg] = true;
-
-			out.push(`        MOV     ${reg}, ${lhs.loc.addr}`);
-			out.push(`        ${expr.mnemonics.padEnd(7)} ${reg}, ${_.isEqual(lhs.loc, rhs.loc) ? reg : rhs.loc.addr}`);
-			loc = {type: 'r', addr: reg};
-		}
-
-		if (pushes)
-			out.push(`        ADD     esp, ${pushes}`);
-
-		return {out, loc};
+		else 
+			throw new Error();
 	}
 	else if (type[0] === 'value')
 	{
@@ -220,6 +227,10 @@ function expression(state, scope, freeRegs, expr, usedRegs)
 		else
 			throw new Error();
 	}
+	// else if (type[0] === 'call')
+	// {
+
+	// }
 	else 
 		throw new Error();
 }
