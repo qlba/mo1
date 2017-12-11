@@ -9,24 +9,68 @@ const lexan = require('./lexan');
 const exec = require('./env');
 
 (async () => {
-	const {source, mode} = yargs
-		.command('$0 <source>', 'interpret <source>')
-		.option('mode', {
-			alias: 'm',
-			group: 'mode',
-			type: 'string',
-			choices: ['cat', 'lexan', 'syntan', 'assembly', 'debug', 'run'],
-			defaults: 'run'
-		})
+	const argv = yargs
+		.usage('$0 <source>', 'Interpret source', yargs => yargs
+			.env('TAFL_QRSA4')
+			.config()
+			.positional('source', {
+				describe: 'Source file path',
+				type: 'string',
+				demandOption: true
+			})
+			.option('bypass', {
+				alias: 'b',
+				group: 'Stage:',
+				describe: 'Print source file',
+				type: 'boolean',
+				defaults: false
+			})
+			.option('lexan', {
+				alias: 'e',
+				group: 'Stage:',
+				describe: 'Print lexical analyzer output',
+				type: 'boolean',
+				defaults: false
+			})
+			.option('syntan', {
+				alias: 'c',
+				group: 'Stage:',
+				describe: 'Print syntax analyzer log and output',
+				type: 'boolean',
+				defaults: false
+			})
+			.option('assembler', {
+				alias: 's',
+				group: 'Stage:',
+				describe: 'Print assembler output',
+				type: 'boolean',
+				defaults: false
+			})
+			.option('debug', {
+				alias: 'g',
+				group: 'Debug:',
+				describe: 'Enable debugging',
+				type: 'boolean',
+				defaults: false
+			})
+			.example('tafl_qrsa4 --bypass main.lang', 'Print contents of main.lang')
+			.example('tafl_qrsa4 --lexan main.lang', 'Print lexical analyzer output for main.lang')
+			.example('tafl_qrsa4 --syntan main.lang', 'Print syntax analyzer output for main.lang')
+			.example('tafl_qrsa4 --assembler main.lang', 'Print assembler output for main.lang')
+			.example('tafl_qrsa4 --debug main.lang', 'Assemble and debug main.lang')
+			.example('tafl_qrsa4 main.lang', 'Assemble and run main.lang')
+			.epilogue('Report bugs to <qlba@deabeef-industries-gmbh.com>')
+			.strict()
+			, () => {})
 		.argv;
 
 	// source = 'tafl_qrsa4/test/p1.lang';
-	// mode = 'run';
+	// stage = 'run';
 
 
-	const program = fs.readFileSync(source).toString();
+	const program = fs.readFileSync(argv.source).toString();
 
-	if (mode === 'cat')
+	if (argv.bypass)
 	{
 		console.log(program);
 		process.exit();
@@ -35,7 +79,7 @@ const exec = require('./env');
 
 	const tokens = lexan(program);
 
-	if (mode === 'lexan')
+	if (argv.lexan)
 	{
 		tokens.forEach(({offset, type, value}) => console.log(
 			printf('%20d %30s %20s', offset, type, value !== undefined ? value : '')
@@ -45,9 +89,9 @@ const exec = require('./env');
 	}
 
 
-	const stucture = syntan({}, tokens, mode === 'syntan');
+	const stucture = syntan({}, tokens, argv.syntan);
 
-	if (mode === 'syntan')
+	if (argv.syntan)
 	{
 		console.dir(stucture, {depth: null});
 		process.exit();
@@ -56,13 +100,13 @@ const exec = require('./env');
 
 	const assembly = assembler({}, stucture.result).out.join('\n');
 
-	if (mode === 'assembly')
+	if (argv.assembler)
 	{
 		console.log(assembly.toLowerCase());
 		process.exit();
 	}
 
 
-	await exec(assembly, mode === 'debug');
+	await exec(assembly, argv.debug);
 
 })().catch(e => console.log(e.message)).then(code => process.exit(code || 0));

@@ -249,8 +249,6 @@ module.exports = function(state, input, verbose)
 		const state = {};
 		state.shop = shop.toString();
 		state.tape = tape.toString();
-		state.M = M;
-		state.x = x;
 	
 		if (M === '$' && x.type === '$')
 		{
@@ -272,7 +270,7 @@ module.exports = function(state, input, verbose)
 		}
 		else if (select[M] && select[M][x.type])
 		{
-			state.action = chalk.yellow(`X  ${rules[select[M][x.type]].lhs} -> ${rules[select[M][x.type]].rhs}`);
+			state.action = chalk.yellow(`X  ${select[M][x.type]}`);
 	
 			const rhs = rules[select[M][x.type]].rhs;
 	
@@ -297,7 +295,7 @@ module.exports = function(state, input, verbose)
 			done = true;
 		}
 	
-		verbose && log('%4d %25s %25s  %s  %s  %s\n', round, state.shop, state.tape, state.M, state.x.type, state.action);
+		verbose && log('%4d   %s   %s   %s\n', round, state.shop, state.tape, state.action);
 	}
 
 	if (!accept)

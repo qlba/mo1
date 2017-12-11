@@ -1,3 +1,5 @@
+const chalk = require('chalk');
+
 module.exports = class Tape {
 	constructor(input)
 	{
@@ -20,13 +22,14 @@ module.exports = class Tape {
 
 	toString()
 	{
-		const str = this.input.slice(this.ptr).map(x => x.type).join('|');
+		let top = this.input[this.ptr].type;
+		let rem = this.input.slice(this.ptr + 1).map(x => x.type).join(' ');
+		
+		const s = Number(rem !== '');
 
-		return str.length > 24 ? str.slice(0, 21) + '...' : str;
-	}
+		if (top.length + s + rem.length > 45)
+			rem = rem.slice(0, 45 - top.length - s - 3) + '...';
 
-	toStringRead()
-	{
-		return this.input.slice(0, this.ptr).map(x => x.type).join('|');
+		return (' ').repeat(45 - top.length - s - rem.length) + chalk.red(top) + (s ? ' ' : '') + rem;
 	}
 };

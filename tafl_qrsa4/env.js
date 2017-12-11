@@ -31,10 +31,12 @@ let eipPrev = 0;
 let output = '';
 let debug = false;
 
-module.exports = async function run(asm, debug) {
+module.exports = async function run(asm, pDebug) {
 	m.code = _.compact(asm.split('\n')).map(line =>
 		(a => ({mnemonics: a[0], args: a.slice(1)}))(_.compact(line.split(/[ ,\t]/)))
 	);
+
+	debug = pDebug;
 
 	for (let round = 0; !m.eflags.xf; round++)
 	{
@@ -51,9 +53,9 @@ module.exports = async function run(asm, debug) {
 
 			debug && clear();
 
-			debug && process.stdout.write(`\n ------ ------ ${round.toString().padStart(5)}\n`);
-
 			debug && console.log(chalk.cyan(output));
+			
+			debug && process.stdout.write(`\n ------ ------ ${round.toString().padStart(5)}\n`);
 
 			debug && printState(mPrev, eipPrev);
 			debug && (mPrev = _.cloneDeep(m));
@@ -64,7 +66,7 @@ module.exports = async function run(asm, debug) {
 				m.eflags.jf = false;
 			
 			// debug && process.stdout.write('Press <RETURN> to continue ...\n');
-			console.log('\n'.repeat(13));
+			debug && console.log('\n'.repeat(13));
 		}
 		catch(e)
 		{
@@ -231,9 +233,13 @@ async function interruption(id)
 	case 0:
 		return m.eflags.xf = true;
 	case 1:
+		debug && console.log(chalk.cyan('--- PROCESS READS STDIN ---'));
 		return prop.reg('eax').set(
 			await new Promise(resolve =>
-				process.stdin.once('data', data => resolve(parseFloat(data)))
+				process.stdin.once('data', data => {
+					output += data;
+					resolve(parseFloat(data));
+				})
 			)
 		);
 	case 2:
@@ -246,11 +252,12 @@ async function interruption(id)
 			if (!char)
 				break;
 
-			process.stdout.write(chalk.cyan(String.fromCharCode(char)));
+			!debug && process.stdout.write(chalk.cyan(String.fromCharCode(char)));
 		}
 		break;
 	case 3:
-		return console.log(chalk.cyan(prop.reg('eax').get()));
+		output += prop.reg('eax').get() + '\n';
+		return !debug && console.log(chalk.cyan(prop.reg('eax').get()));
 	default:
 		throw new Error(`No such interruption: ${id}`);
 	}

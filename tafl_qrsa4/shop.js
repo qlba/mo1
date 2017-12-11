@@ -1,3 +1,5 @@
+const chalk = require('chalk');
+
 const BUF_SIZ = 1024;
 
 module.exports = class Shop
@@ -36,8 +38,14 @@ module.exports = class Shop
 
 	toString()
 	{
-		const str = this.stack.slice(0, this.ptr + 1).reverse().join('');
+		let top = this.stack[this.ptr].toString();
+		let rem = this.stack.slice(0, this.ptr).reverse().join(' ');
 
-		return str.length > 24 ? str.slice(0, 21) + '...' : str;
+		const s = Number(rem !== '');
+
+		if (top.length + s + rem.length > 45)
+			rem = rem.slice(0, 45 - top.length - s - 3) + '...';
+
+		return (' ').repeat(45 - top.length - s - rem.length) + chalk.red(top) + (s ? ' ' : '') + rem;
 	}
 };

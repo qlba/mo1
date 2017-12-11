@@ -1,3 +1,24 @@
+- Byte code
+    - objdump
+    - linker
+- Functions, including recursive
+- United virtual address space with optional debugging address check (code/stack/data/bss/... zone)
+- Variables size
+    - Discriminate int from double
+    - Use co-processor
+- Follow x86 operation codes more precisely
+- Learn more about processor operation cycle
+- More advanced generic register optimization model (ulman/seti, tree split ?)
+- Bitwise operations
+- Imitate processor vehaviour more precisely
+    - Deep hex/bin
+- Arrange better grammar, C and JS constructions
+    - Direct lexan
+    - LR(0)-points syntan
+    - Grammar abbreviations
+- Move it all to C/C++?
+- Memory allocations
+- amd64 architecture
 
 
 - Manual padding
