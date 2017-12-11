@@ -7,7 +7,7 @@ const MCMStep = require('./mcmstep');
 const gauss = require('./gauss');
 
 const PERIOD = 10;
-const PASSBAND = 60;
+const PASSBAND = 10;
 const SIGMA = 0.05;
 const Xk0 = 4710050;
 const Yk0 = 4610000;
@@ -16,8 +16,8 @@ const VYk0 = -5000;
 const X0 = 6378165;
 const Y0 = 0;
 
-const EQUIP_COST = 1e5;
-const GAUGE_COST = 1e3;
+const EQUIP_COST = 1e6;
+const GAUGE_COST = 2e3;
 
 const EPSILON = 0.1;
 
@@ -28,7 +28,7 @@ const pareto = {};
 
 try
 {
-	for (let PERIOD = 0.8; PERIOD >= 0.1; PERIOD -= 0.1)
+	for (let PERIOD = 1.0; PERIOD <= 50; PERIOD += 0.1)
 	{
 		const gaugPos = getGaugingPositions({
 			period: PERIOD,
@@ -36,6 +36,9 @@ try
 			satelliteCoord: [Xk0, Yk0, VXk0, VYk0],
 			targetCoord: [X0, Y0]
 		});
+
+		gaugPos.forEach((gPos) => console.dir(gPos.meta.t))
+		console.log(PERIOD);
 		
 		const modelVector = getModelVector(gaugPos, [X0, Y0]);
 		
@@ -47,6 +50,8 @@ try
 		
 		const N = modelVector.length;
 		const K = 2;
+
+		console.log('N = ' + N);
 		
 		const R = new MathMx(N, 1);
 		for (let i = 0; i < N; i++)
@@ -109,7 +114,7 @@ try
 		const cost = EQUIP_COST + N * GAUGE_COST;
 		const prec = Math.sqrt(resultError.getElement(0, 0).a + resultError.getElement(1, 1).a);
 		
-		process.stdout.write(printf('%10.2f %25d %25f\n', PERIOD, cost, prec));
+		process.stdout.write(printf('%25d %25.2f\n', cost, prec));
 
 		pareto[cost] = !pareto[cost] ? prec : Math.min(pareto[cost], prec);
 
@@ -156,7 +161,8 @@ try
 		}
 	}
 }
-catch (e) {}
+catch (e) {console.log(e);}
+
 
 for (let key in pareto)
 	console.log(`${key}\t${pareto[key]}`);
