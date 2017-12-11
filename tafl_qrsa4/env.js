@@ -1,5 +1,7 @@
-const chalk = require('chalk');
 const _ = require('lodash');
+const chalk = require('chalk');
+const clear = require('clear');
+
 
 const STACK_SIZE = 1024;
 
@@ -26,6 +28,8 @@ const m = {
 let mPrev = _.cloneDeep(m);
 let eipPrev = 0;
 
+let output = '';
+let debug = false;
 
 module.exports = async function run(asm, debug) {
 	m.code = _.compact(asm.split('\n')).map(line =>
@@ -45,7 +49,11 @@ module.exports = async function run(asm, debug) {
 				...checkLocs(commands[mnemonics].locs)(args.map(getParam))
 			);
 
+			debug && clear();
+
 			debug && process.stdout.write(`\n ------ ------ ${round.toString().padStart(5)}\n`);
+
+			debug && console.log(chalk.cyan(output));
 
 			debug && printState(mPrev, eipPrev);
 			debug && (mPrev = _.cloneDeep(m));
@@ -55,7 +63,8 @@ module.exports = async function run(asm, debug) {
 			else
 				m.eflags.jf = false;
 			
-			debug && process.stdout.write('Press <RETURN> to continue ...\n');
+			// debug && process.stdout.write('Press <RETURN> to continue ...\n');
+			console.log('\n'.repeat(13));
 		}
 		catch(e)
 		{
@@ -232,6 +241,7 @@ async function interruption(id)
 			const char = prop.mem('esp', +1).get();
 
 			prop.reg('esp').set(prop.reg('esp').get() + 1);
+			output += String.fromCharCode(char);
 
 			if (!char)
 				break;
@@ -346,7 +356,6 @@ function setFlags(res)
 	m.eflags.sf = res < 0;
 }
 
-
 function printState(prevState, eip)
 {
 	const result = new Array(10).fill('   ');
@@ -359,7 +368,7 @@ function printState(prevState, eip)
 			result[i] +=
 				(i === 3 ? '> ' : '  ') +
 				`${eip - 3 + i}:   `.padStart(8) +
-				m.code[eip - 3 + i].mnemonics.padEnd(7) + ' ' +
+				m.code[eip - 3 + i].mnemonics.toLowerCase().padEnd(7) + ' ' +
 				m.code[eip - 3 + i].args.join(', ').padEnd(22);
 
 	result[3] = chalk.yellow(result[3]);

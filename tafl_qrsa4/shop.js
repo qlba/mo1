@@ -36,6 +36,8 @@ module.exports = class Shop
 
 	toString()
 	{
-		return this.stack.slice(0, this.ptr + 1).reverse().join('');
+		const str = this.stack.slice(0, this.ptr + 1).reverse().join('');
+
+		return str.length > 24 ? str.slice(0, 21) + '...' : str;
 	}
 };

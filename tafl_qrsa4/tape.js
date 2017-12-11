@@ -20,11 +20,13 @@ module.exports = class Tape {
 
 	toString()
 	{
-		return this.input.slice(this.ptr);
+		const str = this.input.slice(this.ptr).map(x => x.type).join('|');
+
+		return str.length > 24 ? str.slice(0, 21) + '...' : str;
 	}
 
 	toStringRead()
 	{
-		return this.input.slice(0, this.ptr);
+		return this.input.slice(0, this.ptr).map(x => x.type).join('|');
 	}
 };

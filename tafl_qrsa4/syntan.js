@@ -297,7 +297,7 @@ module.exports = function(state, input, verbose)
 			done = true;
 		}
 	
-		verbose && log('%4d %25s %25s  %s  %s  %s\n', round, state.shop, state.tape.map(x => x.type).join(''), state.M, state.x.type, state.action);
+		verbose && log('%4d %25s %25s  %s  %s  %s\n', round, state.shop, state.tape, state.M, state.x.type, state.action);
 	}
 
 	if (!accept)

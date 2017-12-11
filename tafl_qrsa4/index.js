@@ -58,7 +58,7 @@ const exec = require('./env');
 
 	if (mode === 'assembly')
 	{
-		console.log(assembly);
+		console.log(assembly.toLowerCase());
 		process.exit();
 	}
 
