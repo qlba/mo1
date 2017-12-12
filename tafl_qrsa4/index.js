@@ -62,6 +62,7 @@ const exec = require('./env');
 			.epilogue('Report bugs to <qlba@deabeef-industries-gmbh.com>')
 			.strict()
 			, () => {})
+		.detectLocale(false)
 		.argv;
 
 	// source = 'tafl_qrsa4/test/p1.lang';
